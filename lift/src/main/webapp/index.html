@@ -2,7 +2,7 @@
         "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html>
   <head>
-    <title>Lift From Scratch</title>
+    <title>Rules</title>
 
     <link rel="stylesheet" type="text/css" href="/css/index.css"></link>
 
@@ -12,7 +12,11 @@
   <body>
       <div id="header"><lift:Index.header/></div>
 
-      <div id="nav"><lift:Index.nav/></div>
+      <div id="nav">
+          <div data-lift="Ajax" id="new-project"></div>
+          <div data-lift="Ajax" id="open-project"></div>
+          <div id="project-menu"></div>
+      </div>
       <!--div style="clear:both"></div-->
 
       <div id="content"><lift:Index.content/></div>
@@ -22,8 +26,8 @@
       <!--div style="clear:both"></div-->
 
       <script>
-            function packContent() {
-                //console.log('packContent');
+            function pack() {
+                //console.log('pack');
                 var margin = 0;
                 var height = $(this).height() - $('#header').outerHeight() - $('#footer').outerHeight() - 2 * margin;
                 var left = $('#nav').outerWidth() + margin;
@@ -38,9 +42,9 @@
             }
 
           $(document).ready(function () {
-            $(window).resize(packContent);
+            $(window).resize(pack);
 
-            packContent();
+            pack();
           });
   </script>
 

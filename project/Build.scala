@@ -2,9 +2,11 @@ import sbt._
 import Keys._
 
 object BuildSettings {
+  val scala = "2.11.1"
+
   val bsDefault = Defaults.defaultSettings ++ Seq(
     organization  := "org.rules"
-  , scalaVersion  := "2.11.6"
+  , scalaVersion  := scala
   , scalacOptions := Seq("-unchecked", "-deprecation", "-Yrepl-sync", "-encoding", "UTF-8", "-optimise")
   )
 
@@ -26,11 +28,36 @@ object Dependencies {
       "container,test"
   val orbit = "org.eclipse.jetty.orbit" % "javax.servlet" % "3.0.0.v201112011016" %
       "container,compile" artifacts Artifact("javax.servlet", "jar", "jar")
-  val liftWebKit = "net.liftweb" %% "lift-webkit" % liftVersion % "compile"
+//  val liftWebKit = "net.liftweb" %% "lift-webkit" % liftVersion % "compile"
+
+
+  val liftweb = Seq(
+    "net.liftweb" %% "lift-webkit" % liftVersion % "compile->default",
+    "net.liftweb" %% "lift-mapper" % liftVersion % "compile->default",
+    "net.liftweb" %% "lift-wizard" % liftVersion % "compile->default")
+
 
   val logback = "ch.qos.logback" % "logback-classic" % "1.0.13"
 
-//  val scalaTest = "org.scalatest" %% "scalatest" % "2.0" % "test"
+  val scalamock = "org.scalamock" % "scalamock-scalatest-support_2.11" % "3.2.2" % "test"
+
+  val typesafe_config = "com.typesafe" % "config" % "1.2.1"
+
+  val scala_swing =
+    CrossVersion.partialVersion(BuildSettings.scala) match {
+      // if scala 2.11+ is used, add dependency on scala-xml module
+      case Some((2, scalaMajor)) if scalaMajor >= 11 =>
+        Seq(
+          "org.scala-lang.modules" %% "scala-xml" % "1.0.3",
+          "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.3",
+          "org.scala-lang.modules" %% "scala-swing" % "1.0.1")
+      case _ =>
+        // or just libraryDependencies.value if you don't depend on scala-swing
+        Seq("org.scala-lang" % "scala-swing" % BuildSettings.scala)
+    }
+
+  val groovy = "org.codehaus.groovy" % "groovy-all" % "2.4.3"
+  //val scalaTest = "org.scalatest" %% "scalatest" % "2.0" % "test"
 }
 
 object RulesBuild extends Build {
@@ -48,17 +75,22 @@ object RulesBuild extends Build {
   // Less plugin
 //  import less.Plugin._
 //  import LessKeys._
+  autoScalaLibrary := false
+  dependencyOverrides += "org.scala-lang" % "scala-library" % scala
+
+  javaOptions += "-XX:MaxPermSize=512m"
 
   val depsCore = Seq(
-//    scalaTest
-  )
+    scalamock,
+    typesafe_config,
+    groovy
+  ) ++ scala_swing
 
   val depsLift = Seq(
     jetty
   , orbit
-  , liftWebKit
   , logback
-  )
+  ) ++ liftweb
 
   lazy val core = Project(
     "core",
@@ -77,10 +109,10 @@ object RulesBuild extends Build {
       artifactName in packageWar :=
         ((_: ScalaVersion, _: ModuleID, _: Artifact) => "rules.war")
     , port in container.Configuration := 8071
-    , scanDirectories in Compile := Nil,
-    javaOptions += "-XX:MaxPermSize=512m"
+    , scanDirectories in Compile := Nil
 
   )
+
 /*
     ++ coffeeSettings ++ Seq(
       resourceManaged in (Compile, coffee) <<= (webappResources in Compile)(_.get.head / "static" / "coffee")
