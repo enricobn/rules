@@ -5,7 +5,7 @@ import java.io.File
 import _root_.net.liftweb.http.SHtml._
 import net.liftweb.http.RequestVar
 import net.liftweb.http.js.JsCmd
-import org.rules.rule.XMLProject
+import org.rules.rule.{XMLRule, XMLModule, XMLProject}
 
 // The next two imports are used to get some implicit conversions
 // in scope.
@@ -32,30 +32,45 @@ class Ajax {
       CmdPair(
         SetHtml("project-menu",
           <h2>{p.name}</h2> ++
-          ajaxButton("Rules", () => updateRules()) ++
-          <br></br> ++
-          ajaxButton("Factories", () => updateFactories())
+          modules()
+          //ajaxButton("Rules", () => updateRules()) ++
+          //<br></br> ++
+          //ajaxButton("Factories", () => updateFactories())
         ),
         SetHtml("content", Text(""))),
       Run("pack();")
     )
   }
 
-  private def updateRules() : JsCmd = {
+  private def modules() : NodeSeq = {
     val p = project.get
+    p.get.modules.foldLeft(NodeSeq.Empty) {(actual,module) => actual ++
+      Text(module.name) ++
+      <br></br> ++
+      ajaxButton("Rules", () => updateRules(module)) ++
+      ajaxButton("Factories", () => updateFactories(module))
+    }
+  }
 
+  private def updateRules(module: XMLModule) : JsCmd = {
     SetHtml("content",
-      <h2>Rules</h2> ++ p.get.rules.foldLeft(NodeSeq.Empty) {(actual,rule) => actual ++ Text(rule.name) ++ <br></br>}
+      <h2>Rules</h2> ++ module.rules.foldLeft(NodeSeq.Empty) {(actual,rule) => actual ++ ruleSeq(rule) ++ <br></br>}
     )
   }
 
-  private def updateFactories() : JsCmd = {
-    val p = project.get
+  private def ruleSeq(rule: XMLRule) : NodeSeq = {
+    <h3>{rule.name}</h3> ++
+    <br></br> ++
+    Text("requires: ") ++ Text(rule.requiresList.toString()) ++
+    <br></br> ++
+    Text("provides: ") ++ Text(rule.provides.toString()) ++
+    <br></br> ++
+    Text("runScript: ") ++ Text(rule.runScript.toString)
+  }
 
-    val rules = p.get.rules
-
+  private def updateFactories(module: XMLModule) : JsCmd = {
     SetHtml("content",
-      <h2>Factories</h2> ++ p.get.factories.foldLeft(NodeSeq.Empty) {(actual,factory) => actual ++ Text(factory.name) ++ <br></br>}
+      <h2>Factories</h2> ++ module.factories.foldLeft(NodeSeq.Empty) {(actual,factory) => actual ++ Text(factory.name) ++ <br></br>}
     )
   }
 

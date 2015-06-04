@@ -18,8 +18,14 @@ class XMLRequirement(token: String, stags: String) extends SimpleRequirement(tok
 
 case class XMLProvides(name: String, value: Option[String])
 
-case class XMLProject(name: String, factories: List[XMLRuleFactory], rules: Set[XMLRule]) {
-  def solver(ui: UI) = new RuleSolver[String](factories, rules.asInstanceOf[Set[Rule[String]]], ui)
+case class XMLModule(name: String, factories: Set[XMLRuleFactory], rules: Set[XMLRule])
+
+case class XMLProject(name: String, modules: Set[XMLModule]) {
+  val factories = modules.flatMap(_.factories)
+  val rules = modules.flatMap(_.rules)
+
+  def solver(ui: UI) = new RuleSolver[String](factories.asInstanceOf[Set[RuleFactory[String]]],
+    rules.asInstanceOf[Set[Rule[String]]], ui)
 }
 
 object XMLProject {
@@ -41,19 +47,16 @@ object XMLProject {
   def apply(folder: File) : Logged[XMLProject] = {
     val files = recursiveListFiles(folder)
     files.value match {
-      case Some(good) => apply(folder.getName, good.map(new FileInputStream(_)).toSet.asInstanceOf[Set[InputStream]])
+      case Some(good) => apply(folder.getName, good.map{ f => (f.getName, new FileInputStream(f))}.toMap.asInstanceOf[Map[String,InputStream]])
       case _ => files.messages
     }
   }
 
-  def apply(name: String, files: Set[InputStream]) : XMLProject = {
-    var allFactories = List.empty[XMLRuleFactory]
-    var allRules = Set.empty[XMLRule]
-
-    files.foreach { is =>
+  def apply(name: String, files: Map[String,InputStream]) : XMLProject = {
+    val modules = files.map { case (moduleName,is) =>
       val rules = XML.load(is)
 
-      (rules \ "factory").foreach { factory =>
+      val factories = (rules \ "factory").map { factory =>
         val name = (factory \ "@name").text
 
         val rules = getRules(factory)
@@ -62,13 +65,12 @@ object XMLProject {
           create.text
         }
 
-        allFactories = allFactories :+ XMLRuleFactory(name, rules.toSet, create.head)
-
+        XMLRuleFactory(name, rules.toSet, create.head)
       }
 
-      allRules = allRules ++ getRules(rules)
+      XMLModule(moduleName, factories.toSet, getRules(rules).toSet)
     }
-    new XMLProject(name, allFactories, allRules)
+    new XMLProject(name, modules.toSet)
   }
 
   private def getRules(root: NodeSeq) = {

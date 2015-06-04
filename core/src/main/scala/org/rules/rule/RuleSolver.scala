@@ -81,7 +81,7 @@ case class Logged[T](value: Option[T], messages: List[Message] = List.empty) {
 
 }
 
-class RuleSolver[TOKEN] (factories: List[RuleFactory[TOKEN]], r: Set[Rule[TOKEN]], ui: UI) {
+class RuleSolver[TOKEN] (factories: Set[RuleFactory[TOKEN]], r: Set[Rule[TOKEN]], ui: UI) {
   val choiceCache = new ChoiceCache
   val runCache = new RunCache
   val rules = r ++ factories.foldLeft(Set.empty[Rule[TOKEN]]){ (actual, factory) => actual ++ factory.create(ui) }

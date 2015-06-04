@@ -10,7 +10,7 @@ class ExampleRulesSpec extends FlatSpec {
       RepositoryCons, SQLServerCons2005, SQLServerCons2008, MainCons, SQLServerConnectionFunction, OracleConnectionFunction
   )
   
-  val solver = new RuleSolver(List(GoalFactory), rules, SwingUI)
+  val solver = new RuleSolver[String](Set(GoalFactory), rules, SwingUI)
 
   "run" must "be valid" in {
     solver.tree.value match {
