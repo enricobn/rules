@@ -3,7 +3,8 @@ package org.rules.lift.snippet
 import java.io.File
 
 import _root_.net.liftweb.http.SHtml._
-import net.liftweb.http.{SHtml, RequestVar}
+import net.liftweb.common.Full
+import net.liftweb.http.{SessionVar, SHtml, RequestVar}
 import net.liftweb.http.js.JsCmd
 import org.rules.rule.{XMLRule, XMLModule, XMLProject}
 
@@ -14,8 +15,9 @@ import _root_.net.liftweb.util.Helpers._
 
 import scala.xml.{NodeSeq,Text}
 
-class Ajax {
-  private object project extends RequestVar[Option[XMLProject]](None)
+object Ajax {
+  object projectVar extends SessionVar[Option[XMLProject]](None)
+  object moduleVar extends SessionVar[Option[XMLModule]](None)
 
   private def updateNav() : JsCmd = {
     val ifProject = XMLProject(new File("core/src/test/resources/org/rules/rule/example3"))
@@ -26,7 +28,7 @@ class Ajax {
 
     val p = ifProject.value.get
 
-    project.set(Some(p))
+    projectVar.set(Some(p))
 
     CmdPair(
       CmdPair(
@@ -43,7 +45,7 @@ class Ajax {
   }
 
   private def modules() : NodeSeq = {
-    val p = project.get
+    val p = projectVar.get
     p.get.modules.foldLeft(NodeSeq.Empty) {(actual,module) => actual ++
       Text(module.name) ++
       <br></br> ++
@@ -53,8 +55,10 @@ class Ajax {
   }
 
   private def updateRules(module: XMLModule) : JsCmd = {
+    moduleVar.set(Some(module))
     SetHtml("content",
-      <h2>Rules</h2> ++ module.rules.foldLeft(NodeSeq.Empty) {(actual,rule) => actual ++ ruleForm(rule) ++ <br></br>}
+      EditRules.embed
+    //  <h2>Rules</h2> ++ module.rules.foldLeft(NodeSeq.Empty) {(actual,rule) => actual ++ ruleForm(rule) ++ <br></br>}
     )
   }
 

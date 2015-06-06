@@ -1,8 +1,7 @@
 package org.rules.rule.example2
 
 import org.rules.{SwingUI, UI}
-import org.rules.rule.RuleSolver
-import org.rules.rule.Rule
+import org.rules.rule.{RuleFactory, RuleSolver, Rule}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.FlatSpec
 
@@ -13,7 +12,7 @@ class ExampleRules2Spec extends FlatSpec with MockFactory {
   "run" must "be valid" in {
     val rules = Set(Goal, Main, Repo, Main1, Repo1, Connection)
 
-    val solver = new RuleSolver(List.empty, rules, ui)
+    val solver = new RuleSolver(Set.empty[RuleFactory[String]], rules, ui)
 
     val stubui = ChooserStub(solver)
     stubui.add(List(Main,Main1), Main1)
