@@ -9,7 +9,7 @@ import net.liftweb.http.js.JE.ValById
 import net.liftweb.http.js.{JsCmds, JsCmd}
 import net.liftweb.http.js.JsCmds.{CmdPair, SetHtml}
 import org.rules.lift.snippet.Ajax
-import org.rules.rule.XMLRule
+import org.rules.rule.xml.XMLRule
 import scala.xml.{Text, NodeSeq}
 import net.liftweb.util.BindHelpers._
 

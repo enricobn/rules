@@ -2,6 +2,7 @@ package org.rules.rule
 
 import java.io.{FileOutputStream, FileInputStream, File}
 
+import org.rules.rule.xml.XMLModule
 import org.scalatest.FunSuite
 
 /**

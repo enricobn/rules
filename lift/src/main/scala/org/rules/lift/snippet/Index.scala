@@ -6,7 +6,8 @@ import _root_.net.liftweb.http.SHtml._
 import net.liftweb.common.Full
 import net.liftweb.http.{SessionVar, SHtml, RequestVar}
 import net.liftweb.http.js.JsCmd
-import org.rules.rule.{XMLRule, XMLModule, XMLProject}
+import org.rules.rule.xml.{XMLProject, XMLModule, XMLRule}
+import org.rules.rule.XMLProject
 
 // The next two imports are used to get some implicit conversions
 // in scope.

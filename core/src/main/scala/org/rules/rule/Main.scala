@@ -3,6 +3,7 @@ package org.rules.rule
 import java.io.File
 
 import org.rules.SwingUI
+import org.rules.rule.xml.XMLProject
 
 /**
  * Created by enrico on 5/29/15.

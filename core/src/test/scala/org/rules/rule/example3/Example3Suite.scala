@@ -2,6 +2,7 @@ package org.rules.rule.example3
 
 import java.io.File
 
+import org.rules.rule.xml.XMLProject
 import org.rules.{UI, ConsoleUI}
 import org.rules.rule._
 import org.scalamock.scalatest.MockFactory
