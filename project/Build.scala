@@ -78,7 +78,19 @@ object RulesBuild extends Build {
   autoScalaLibrary := false
   dependencyOverrides += "org.scala-lang" % "scala-library" % scala
 
-  javaOptions += "-XX:MaxPermSize=512m"
+  //javaOptions += "-XX:MaxPermSize=512m"
+
+  //fork in run := true
+
+  //javaHome := sys.env.get("JAVA_HOME") map file
+
+  val jv = sys.props("java.specification.version")
+  if (jv != "1.7") {
+    throw new RuntimeException("Expected java version 1.7 but was " + jv +
+      " set an appropriate JAVA_HOME environment variable.")
+  }
+
+  val scalaBuildOptions = Seq("-target:jvm-1.7")
 
   val depsCore = Seq(
     scalamock,
@@ -96,7 +108,8 @@ object RulesBuild extends Build {
     "core",
     file("core"),
     settings = bsCore ++ Seq(
-      libraryDependencies := depsCore
+      libraryDependencies := depsCore,
+      scalacOptions ++= scalaBuildOptions
     )
   )
 
@@ -107,10 +120,10 @@ object RulesBuild extends Build {
       libraryDependencies := depsLift
     ) ++ webSettings  ++ Seq(
       artifactName in packageWar :=
-        ((_: ScalaVersion, _: ModuleID, _: Artifact) => "rules.war")
-    , port in container.Configuration := 8071
-    , scanDirectories in Compile := Nil
-
+        ((_: ScalaVersion, _: ModuleID, _: Artifact) => "rules.war"),
+      port in container.Configuration := 8071,
+      scanDirectories in Compile := Nil,
+      scalacOptions ++= scalaBuildOptions
   )
 
 /*
