@@ -5,10 +5,8 @@ package org.rules.lift.snippet
  */
 import net.liftweb._
 import http._
-import net.liftweb.http.js.JE.ValById
 import net.liftweb.http.js.{JsCmds, JsCmd}
 import net.liftweb.http.js.JsCmds.{CmdPair, SetHtml}
-import org.rules.lift.snippet.Ajax
 import org.rules.rule.xml.XMLRule
 import scala.xml.{Text, NodeSeq}
 import net.liftweb.util.BindHelpers._
@@ -17,8 +15,10 @@ import net.liftweb.util.BindHelpers._
  * A RequestVar-based snippet
  */
 object EditRules {
-
   private object ruleVar extends RequestVar[Option[XMLRule]](None)
+  private object requiresVar extends RequestVar("")
+  private object providesVar extends RequestVar("")
+  private object runVar extends RequestVar("")
 
   def embed() = {
       <span class="lift:embed?what=/editrules" />
@@ -30,15 +30,19 @@ object EditRules {
 
 
   def processSave() = {
-    println("Save")
+    println("Save requires=" + requiresVar + " provides=" + providesVar + " run=" + runVar)
   }
 
   def submitRule(xhtml: NodeSeq): NodeSeq = {
     ruleVar.is match {
       case Some (rule) =>
-        val cssTransform = ".requires [value]" #> rule.requires.toString() &
-          ".provides [value]" #> rule.provides.toString() &
-          ".runScript [value]" #> rule.runScript.toString()
+        requiresVar.set(rule.requires.toString())
+        providesVar.set(rule.provides.toString())
+        runVar.set(rule.runScript.toString)
+
+        val cssTransform = ".requires" #> SHtml.text(requiresVar.is, requiresVar(_)) &
+          ".provides" #> SHtml.text(providesVar.is, providesVar(_)) &
+          ".runScript" #> SHtml.text(runVar.is, runVar(_))
         cssTransform(xhtml) ++ SHtml.hidden(processSave)
       case _ => Text("Cannot find rule in request")
     }
