@@ -66,11 +66,11 @@ object Ajax {
 
   private def ruleSeq(rule: XMLRule) : NodeSeq = {
     <h3>{rule.name}</h3> ++
-    Text("requires: ") ++ Text(rule.requiresList.toString()) ++
+    Text("requires: ") ++ Text(rule.requires.toString()) ++
     <br></br> ++
-    Text("provides: ") ++ Text(rule.xmlProvides.toString()) ++
+    Text("provides: ") ++ Text(rule.provides.toString()) ++
     <br></br> ++
-    Text("runScript: ") ++ Text(rule.runScript.toString)
+    Text("runScript: ") ++ Text(rule.run.toString)
   }
 
   def addRule(xhtml : NodeSeq) : NodeSeq = {
@@ -94,9 +94,9 @@ object Ajax {
     <h3>{rule.name}</h3> ++
     <form class="lift:form.ajax">
       <lift:Ajax.addRule>
-        requires: <entry:requires value={rule.requiresList.toString()}/><br />
+        requires: <entry:requires value={rule.requires.toString()}/><br />
         provides: <entry:provides value={rule.provides.toString()}/><br />
-        runScript: <entry:runScript value={rule.runScript.toString}/><br />
+        runScript: <entry:runScript value={rule.run.toString}/><br />
         <input type="submit" value="Submit" />
       </lift:Ajax.addRule>
     </form>

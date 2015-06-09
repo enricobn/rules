@@ -2,7 +2,7 @@ package org.rules.rule
 
 import java.io.{FileOutputStream, FileInputStream, File}
 
-import org.rules.rule.xml.XMLModule
+import org.rules.rule.xml.{XMLRule, XMLModule}
 import org.scalatest.FunSuite
 
 /**
@@ -18,10 +18,9 @@ class XMLSuite extends FunSuite {
     val module = XMLModule(tmp)
 
     val rule =
-      <rules>
         <rule name="Oracle" tags="dbType=repo,type=cons">
-          <requires name="test"/>
-          <provides name="test">'test'</provides>
+          <requires token="test"/>
+          <provides token="test">'test'</provides>
           <run>
             <![CDATA[
             return ['test':'test']
@@ -29,9 +28,8 @@ class XMLSuite extends FunSuite {
           </run>
 
         </rule>
-      </rules>
 
-    val newModule = XMLModule.saveAndReload(module, XMLModule.getRules(rule).head)
+    val newModule = XMLModule.saveAndReload(module, XMLRule(rule))
     val oracle = newModule.rules.find(_.name == "Oracle").get
     assert(oracle.requires.head.token == "test")
   }

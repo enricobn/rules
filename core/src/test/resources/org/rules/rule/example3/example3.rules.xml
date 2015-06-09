@@ -1,11 +1,11 @@
 <rules>
     <rule name="Connection">
-        <requires name="driverClassName"/>
-        <requires name="url"/>
-        <requires name="username"/>
-        <requires name="password"/>
+        <requires token="driverClassName"/>
+        <requires token="url"/>
+        <requires token="username"/>
+        <requires token="password"/>
 
-        <provides name="connection"/>
+        <provides token="connection"/>
 
         <run>
         <![CDATA[
@@ -21,25 +21,25 @@
     </rule>
 
     <rule name="Oracle" tags="dbType=repo,type=cons">
-        <requires name="oracle.server"/>
-        <requires name="oracle.port"/>
-        <requires name="oracle.sid"/>
-        <requires name="oracle.username"/>
-        <requires name="oracle.password"/>
+        <requires token="oracle.server"/>
+        <requires token="oracle.port"/>
+        <requires token="oracle.sid"/>
+        <requires token="oracle.username"/>
+        <requires token="oracle.password"/>
 
-        <provides name="url">'jdbc:oracle:thin:@' + r0 + ':' + r1 + ':' + r2</provides>
-        <provides name="driverClassName">'oracle.jdbc.driver.OracleDriver'</provides>
-        <provides name="username">r3</provides>
-        <provides name="password">r4</provides>
+        <provides token="url">'jdbc:oracle:thin:@' + r0 + ':' + r1 + ':' + r2</provides>
+        <provides token="driverClassName">'oracle.jdbc.driver.OracleDriver'</provides>
+        <provides token="username">r3</provides>
+        <provides token="password">r4</provides>
     </rule>
 
     <factory name="Factory">
         <rule name="Version1">
-            <provides name="version">'V1'</provides>
+            <provides token="version">'V1'</provides>
         </rule>
 
         <rule name="Version2">
-            <provides name="version">'V2'</provides>
+            <provides token="version">'V2'</provides>
         </rule>
 
         <create>

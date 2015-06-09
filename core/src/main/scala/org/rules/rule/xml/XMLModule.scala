@@ -38,38 +38,6 @@ object XMLModule {
      XMLModule(module.file)
    }
 
-   def getRules(root: NodeSeq) = {
-     (root \ "rule").map { rule =>
-       val name = (rule \ "@name").text
-
-       val tags = (rule \ "@tags").text
-
-       val requirements = (rule \ "requires").map { requires =>
-         val name = (requires \ "@name").text
-         new XMLRequirement(name, "")
-       }
-
-       val provided = (rule \ "provides").map { provides =>
-         val name = (provides \ "@name").text
-         val value = provides.text
-         if (value == null || value.isEmpty) {
-           XMLProvides(name, None)
-         } else {
-           XMLProvides(name, Some(value))
-         }
-       }
-
-       val run = (rule \ "run").map{ run =>
-         run.text
-       }
-
-       if (run == null || run.isEmpty) {
-         XMLRule(name, tags, requirements.toList, provided.toSet, None)
-       } else {
-         XMLRule(name, tags, requirements.toList, provided.toSet, Some(run.head))
-       }
-     }
-   }
  }
 
 case class XMLModule(file: File) {
@@ -77,16 +45,12 @@ case class XMLModule(file: File) {
 
   val xml = XML.load(new FileInputStream(file))
 
-  val rules = XMLModule.getRules(xml)
+  val rules = (xml \ "rule").map(XMLRule(_))
 
   val factories = (xml \ "factory").map { factory =>
     val name = (factory \ "@name").text
-
-    val rules = XMLModule.getRules(factory)
-
-    val create = (factory \ "create").map{ create =>
-      create.text
-    }
+    val rules = (factory \ "rule").map(XMLRule(_))
+    val create = (factory \ "create").map(_.text)
 
     XMLRuleFactory(name, rules.toSet, create.head)
   }

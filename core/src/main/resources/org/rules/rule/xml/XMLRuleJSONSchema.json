@@ -11,7 +11,7 @@
       "type": "string",
       "description": "Tags"
     },
-    "requirements": {
+    "requires": {
       "type": "array",
       "format": "table",
       "title": "Requirements",

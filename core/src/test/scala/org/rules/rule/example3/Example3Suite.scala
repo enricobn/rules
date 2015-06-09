@@ -2,7 +2,8 @@ package org.rules.rule.example3
 
 import java.io.File
 
-import org.rules.rule.xml.XMLProject
+import org.rules.rule.xml.{XMLRule,XMLProject}
+import org.rules.rule.xml.XMLRule._
 import org.rules.{UI, ConsoleUI}
 import org.rules.rule._
 import org.scalamock.scalatest.MockFactory
@@ -26,7 +27,7 @@ class Example3Suite extends FunSuite with MockFactory {
 
     assert(rules.nonEmpty)
 
-    val connectionRule = rules.find(_.name == "Connection").get
+    val connectionRule = rules.find(_.name == "Connection").get.toRule()
 
     val result = connectionRule.run(ConsoleUI,
       Map(
@@ -46,7 +47,7 @@ class Example3Suite extends FunSuite with MockFactory {
     assert(connection.get("username") == "oracleuser")
     assert(connection.get("password") == "oraclepwd")
 
-    val oracleRule = rules.find(_.name == "Oracle").get
+    val oracleRule = rules.find(_.name == "Oracle").get.toRule()
 
     assert(oracleRule.providesTags == Tags(Map("dbType" -> "repo", "type" -> "cons")))
 

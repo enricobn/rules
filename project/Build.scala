@@ -99,6 +99,7 @@ object RulesBuild extends Build {
   ) ++ scala_swing
 
   val depsLift = Seq(
+    scalamock,
     jetty
   , orbit
   , logback

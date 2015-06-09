@@ -19,7 +19,7 @@ case class XMLRuleFactory(name: String, rules: Set[XMLRule], createScript: Strin
 
      val ruleName = engine.eval(createScript).asInstanceOf[String]
 
-     val rulesMap = rules.map{ rule => (rule.name, rule) }.toMap
+     val rulesMap = rules.map{ rule => (rule.name, rule.toRule()) }.toMap
 
      if (rulesMap.contains(ruleName)) {
        Set(rulesMap(ruleName))
