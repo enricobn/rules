@@ -83,30 +83,10 @@ object EditRules {
       }
     ) ~
     ("run" -> rule.run)
-/*
-    val json = toJson(rule.toXML())
-
-    val t = json transform {
-      // otherwise a single requirement is treated like an object and not like an array
-      case JField("requires", x: JObject) => JField("requires", JArray(x :: Nil))
-      // otherwise a single provider is treated like an object and not like an array
-      case JField("provides", x: JObject) => JField("provides", JArray(x :: Nil))
-      // the tag value is automatically named as the tag itself, but I don't like it
-      case JField("provides", x: JString) => JField("value", x)
-    }
-
-    val t1 = t transform {
-      // I don't want requirements to be wrapped in an object
-      case JField("requirements", x: JObject) => x.children.head
-      // I don't want providers to be wrapped in an object
-      case JField("providers", x: JObject) => x.children.head
-    }
-    t1 \ "rule"
-    */
   }
 
   private def ruleSeq(rule: XMLRule) : NodeSeq = {
-    println(rule.toXML())
+/*    println(rule.toXML())
 
     val json = ruleToJson(rule)
 
@@ -114,14 +94,8 @@ object EditRules {
 
     println(pretty(render(json)))
 
-/*    val extracted = json match {
-      case o : JObject => JObject(List(JField("rule", o)))
-      case _ => throw new IllegalArgumentException()
-    }
-
-    println(pretty(render(extracted)))
-*/
     println(jsonToRule(json).toXML())
+    */
 
     <div data-lift="EditRules.ruleOnClick" rule-name={rule.name}>
       <h3 class="rule">{rule.name}</h3>
