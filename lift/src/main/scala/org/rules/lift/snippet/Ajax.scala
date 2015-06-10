@@ -35,7 +35,7 @@ object Ajax {
     CmdPair(
       CmdPair(
         SetHtml("project-menu",
-          <h2>{p.name}</h2> ++
+          <h2 class="rules-nav">{p.name}</h2> ++
           modules()
           //ajaxButton("Rules", () => updateRules()) ++
           //<br></br> ++
@@ -49,10 +49,10 @@ object Ajax {
   private def modules() : NodeSeq = {
     val p = projectVar.get
     p.get.modules.foldLeft(NodeSeq.Empty) {(actual,module) => actual ++
-      Text(module.name) ++
+      <h5 class="rules-nav">{module.name}</h5> ++
+      ajaxButton("Rules", () => updateRules(module), ("class", "btn btn-default rules-nav")) ++
       <br></br> ++
-      ajaxButton("Rules", () => updateRules(module)) ++
-      ajaxButton("Factories", () => updateFactories(module))
+      ajaxButton("Factories", () => updateFactories(module), ("class", "btn btn-default rules-nav"))
     }
   }
 
@@ -122,12 +122,18 @@ object Ajax {
 
   def render = {
     // build up an ajax button to show the rules in the navigation div
+    def newProject(in: NodeSeq) : NodeSeq = {
+      Text("")
+      //<button>New project</button>
+      //a(() => showNav, in)
+    }
+
     def openProject(in: NodeSeq) : NodeSeq = {
       ajaxButton(Text("Load project"), () => updateNav)
       //a(() => showNav, in)
     }
-
     // I bind the openProject method to element with id 'open-project'
-    "#open-project" #> openProject _
+    "#open-project" #> openProject _ &
+    "#new-project" #> newProject _
   }
 }
