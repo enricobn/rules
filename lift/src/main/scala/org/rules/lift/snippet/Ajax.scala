@@ -22,8 +22,8 @@ import _root_.net.liftweb.http.js.JsCmds._
  * Created by enrico on 6/7/15.
  */
 object Ajax {
-  object projectVar extends SessionVar[Option[XMLProject]](None)
-  object moduleVar extends SessionVar[Option[XMLModule]](None)
+
+
 
   private def rulesToJson(rules: Seq[XMLRule]) : JValue = {
     JArray(rules.map(EditRules.ruleToJson(_)).toList)
@@ -50,80 +50,7 @@ object Ajax {
     Run(script)
   }
 */
-  def jsonEditor(rule: XMLRule) : JsCmd = {
-    val is = getClass().getResourceAsStream("/org/rules/rule/xml/XMLRuleJSONSchema.json")
-    val schema = scala.io.Source.fromInputStream(is).getLines().mkString("\n")
 
-    val script =
-      """
-        if (typeof $.ruleEditor == 'undefined') {
-          JSONEditor.defaults.options.theme = 'bootstrap3';
-          JSONEditor.defaults.iconlib = 'bootstrap3';
-          JSONEditor.defaults.options.disable_edit_json = true;
-          JSONEditor.defaults.options.disable_properties = true;
-
-          $("#detail").empty();
-
-          // Initialize the editor
-          $.ruleEditor = new JSONEditor(document.getElementById("detail"),
-        """ + schema +
-        """);
-        }
-
-        // Set the value
-          $.ruleEditor.setValue(
-        """ +
-        json.compact(json.render(EditRules.ruleToJson(rule))) + ");\n"
-
-    Run(script)
-  }
-
-  private def updateNav() : JsCmd = {
-    val ifProject = XMLProject(new File("core/src/test/resources/org/rules/rule/example3"))
-
-    if (ifProject.value.isEmpty) {
-      return Run("alert('Failed to load project');")
-    }
-
-    val p = ifProject.value.get
-
-    projectVar.set(Some(p))
-
-    CmdPair(
-      CmdPair(
-        SetHtml("project-menu",
-          <h2 class="rules-nav">{p.name}</h2> ++
-          modules()
-          //ajaxButton("Rules", () => updateRules()) ++
-          //<br></br> ++
-          //ajaxButton("Factories", () => updateFactories())
-        ),
-        SetHtml("content", Text(""))),
-      Run("pack();")
-    )
-  }
-
-  private def modules() : NodeSeq = {
-    val p = projectVar.get
-    p.get.modules.foldLeft(NodeSeq.Empty) {(actual,module) => actual ++
-      <h5 class="rules-nav">{module.name}</h5> ++
-      ajaxButton("Rules", () => updateRules(module), ("class", "btn btn-default rules-nav")) ++
-      <br></br> ++
-      ajaxButton("Factories", () => updateFactories(module), ("class", "btn btn-default rules-nav"))
-    }
-  }
-
-  private def updateRules(module: XMLModule) : JsCmd = {
-    moduleVar.set(Some(module))
-    //jsonEditor(module)
-    CmdPair(
-      SetHtml("content",
-        EditRules.embed
-      //  <h2>Rules</h2> ++ module.rules.foldLeft(NodeSeq.Empty) {(actual,rule) => actual ++ ruleForm(rule) ++ <br></br>}
-      ),
-      Run("$.ruleEditor = undefined;")
-    )
-  }
 
   private def ruleSeq(rule: XMLRule) : NodeSeq = {
     <h3>{rule.name}</h3> ++
@@ -174,27 +101,4 @@ object Ajax {
   }
 */
 
-  private def updateFactories(module: XMLModule) : JsCmd = {
-    SetHtml("content",
-      <h2>Factories</h2> ++ module.factories.foldLeft(NodeSeq.Empty) {(actual,factory) => actual ++ Text(factory.name) ++ <br></br>}
-    )
-  }
-
-
-  def render = {
-    // build up an ajax button to show the rules in the navigation div
-    def newProject(in: NodeSeq) : NodeSeq = {
-      Text("")
-      //<button>New project</button>
-      //a(() => showNav, in)
-    }
-
-    def openProject(in: NodeSeq) : NodeSeq = {
-      ajaxButton(Text("Load project"), () => updateNav)
-      //a(() => showNav, in)
-    }
-    // I bind the openProject method to element with id 'open-project'
-    "#open-project" #> openProject _ &
-    "#new-project" #> newProject _
-  }
 }

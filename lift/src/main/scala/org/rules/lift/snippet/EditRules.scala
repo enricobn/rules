@@ -6,8 +6,9 @@ package org.rules.lift.snippet
 import net.liftweb._
 import http._
 import net.liftweb.http.js.{JsCmds, JsCmd}
-import net.liftweb.http.js.JsCmds.{CmdPair, SetHtml}
+import net.liftweb.http.js.JsCmds.{Run, CmdPair, SetHtml}
 import net.liftweb.json.JsonAST._
+import org.rules.lift.snippet.Ajax._
 import org.rules.rule.xml.XMLRule
 import scala.util.parsing.json.JSONObject
 import scala.xml.{Text, NodeSeq}
@@ -20,25 +21,55 @@ import net.liftweb.json.JsonDSL._
  * A RequestVar-based snippet
  */
 object EditRules {
+  /*
   private object ruleVar extends RequestVar[Option[XMLRule]](None)
   private object requiresVar extends RequestVar("")
   private object providesVar extends RequestVar("")
   private object runVar extends RequestVar("")
+*/
+  private def jsonEditor(rule: XMLRule) : JsCmd = {
+    val is = getClass().getResourceAsStream("/org/rules/rule/xml/XMLRuleJSONSchema.json")
+    val schema = scala.io.Source.fromInputStream(is).getLines().mkString("\n")
+
+    val script =
+      """
+        if (typeof $.ruleEditor == 'undefined') {
+          JSONEditor.defaults.options.theme = 'bootstrap3';
+          JSONEditor.defaults.iconlib = 'bootstrap3';
+          JSONEditor.defaults.options.disable_edit_json = true;
+          JSONEditor.defaults.options.disable_properties = true;
+
+          $("#detail").empty();
+
+          // Initialize the editor
+          $.ruleEditor = new JSONEditor(document.getElementById("detail"),
+      """ + schema +
+        """);
+        }
+
+        // Set the value
+          $.ruleEditor.setValue(
+        """ +
+        json.compact(json.render(EditRules.ruleToJson(rule))) + ");\n"
+
+    Run(script)
+  }
+
+  def listRules (xhtml: NodeSeq): NodeSeq = {
+    <h2 style="margin-left: 10px;">Rules</h2> ++
+      Index.moduleVar.get.get.rules.foldLeft(NodeSeq.Empty) {(actual,rule) => actual ++ render(rule)}
+  }
 
   def embed() = {
       <span class="lift:embed?what=/editrules" />
   }
 
-  def listRules (xhtml: NodeSeq): NodeSeq = {
-    <h2 style="margin-left: 10px;">Rules</h2> ++
-    Ajax.moduleVar.get.get.rules.foldLeft(NodeSeq.Empty) {(actual,rule) => actual ++ ruleSeq(rule)}
-  }
-
-
+  /*
   def processSave() = {
     println("Save requires=" + requiresVar + " provides=" + providesVar + " run=" + runVar)
   }
-
+*/
+  /*
   def submitRule(xhtml: NodeSeq): NodeSeq = {
     ruleVar.is match {
       case Some (rule) =>
@@ -53,12 +84,13 @@ object EditRules {
       case _ => Text("Cannot find rule in request")
     }
   }
+*/
 
   def ruleOnClick(node: NodeSeq) : NodeSeq = {
     val name = node.head.\@("rule-name")
 
     val cssTransform = ".rule [onclick]" #>
-      Ajax.jsonEditor(Ajax.moduleVar.get.get.rules.find(_.name == name).get)
+      jsonEditor(Index.moduleVar.get.get.rules.find(_.name == name).get)
 /*      SHtml.ajaxInvoke(() => {
         val name = node.head.\@("rule-name")
         ruleVar.set(Ajax.moduleVar.get.get.rules.find(_.name == name))
@@ -90,7 +122,7 @@ object EditRules {
     ("run" -> rule.run.getOrElse(""))
   }
 
-  private def ruleSeq(rule: XMLRule) : NodeSeq = {
+  private def render(rule: XMLRule) : NodeSeq = {
 /*    println(rule.toXML())
 
     val json = ruleToJson(rule)
