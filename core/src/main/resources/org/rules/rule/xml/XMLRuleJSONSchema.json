@@ -1,60 +1,62 @@
-{
-  "title": "Rule",
-  "type": "object",
-  "properties": {
-    "name": {
-      "type": "string",
-      "description": "Name",
-      "minLength": 4
-    },
-    "tags": {
-      "type": "string",
-      "description": "Tags"
-    },
-    "requires": {
-      "type": "array",
-      "format": "table",
-      "title": "Requirements",
-      "uniqueItems": true,
-      "items": {
-        "type": "object",
-        "title": "Requires",
-        "properties": {
-          "token" : {
-            "type": "string",
-            "title": "Token"
-          },
-          "tags" : {
-            "type": "string",
-            "title": "Tags"
+{"schema": {
+    "type": "object",
+    "format": "grid",
+    "title": "detail",
+    "properties": {
+      "name": {
+        "type": "string",
+        "title": "Name",
+        "minLength": 4
+      },
+      "tags": {
+        "type": "string",
+        "title": "Tags"
+      },
+      "requires": {
+        "type": "array",
+        "format": "table",
+        "title": "Requirements",
+        "uniqueItems": true,
+        "items": {
+          "type": "object",
+          "title": "Requires",
+          "properties": {
+            "token": {
+              "type": "string",
+              "title": "Token"
+            },
+            "tags": {
+              "type": "string",
+              "title": "Tags"
+            }
           }
         }
-      }
-    },
-    "provides": {
-      "type": "array",
-      "format": "table",
-      "title": "Provides",
-      "uniqueItems": true,
-      "items": {
-        "type": "object",
+      },
+      "provides": {
+        "type": "array",
+        "format": "table",
         "title": "Provides",
-        "properties": {
-          "token" : {
-            "type": "string",
-            "title": "Token"
-          },
-          "value" : {
-            "type": "string",
-            "title": "Expression"
+        "uniqueItems": true,
+        "items": {
+          "type": "object",
+          "title": "Provides",
+          "properties": {
+            "token": {
+              "type": "string",
+              "title": "Token"
+            },
+            "value": {
+              "type": "string",
+              "title": "Expression"
+            }
           }
         }
+      },
+      "run": {
+        "type": "string",
+        "format": "textarea",
+        "title": "Script"
       }
-    },
-    "run": {
-      "type": "string",
-      "format": "textarea",
-      "description": "Script"
     }
-  }
+}
 }

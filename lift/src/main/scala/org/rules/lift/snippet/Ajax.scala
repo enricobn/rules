@@ -3,6 +3,9 @@ package org.rules.lift.snippet
 import java.io.File
 import java.nio.file.Files
 
+import net.liftweb.json
+import net.liftweb.json.JsonAST.{JArray, JValue}
+import net.liftweb.json.JsonDSL
 import org.rules.rule.xml.{XMLRule, XMLModule, XMLProject}
 import net.liftweb.http.{SHtml, SessionVar}
 import net.liftweb.http.js.JsCmd
@@ -10,6 +13,7 @@ import net.liftweb.http.js.JsCmds.{SetHtml, CmdPair, Run}
 import net.liftweb.util.Helpers._
 import net.liftweb.http.SHtml._
 import scala.xml.{NodeSeq, Text}
+import net.liftweb.json.JsonDSL._
 // The next two imports are used to get some implicit conversions
 // in scope.
 import _root_.net.liftweb.http.js.JsCmds._
@@ -20,6 +24,59 @@ import _root_.net.liftweb.http.js.JsCmds._
 object Ajax {
   object projectVar extends SessionVar[Option[XMLProject]](None)
   object moduleVar extends SessionVar[Option[XMLModule]](None)
+
+  private def rulesToJson(rules: Seq[XMLRule]) : JValue = {
+    JArray(rules.map(EditRules.ruleToJson(_)).toList)
+  }
+/*
+  private def jsonEditor(module: XMLModule) : JsCmd = {
+    val is = getClass().getResourceAsStream("/org/rules/rule/xml/XMLRuleJSONSchema.json")
+    val schema = scala.io.Source.fromInputStream(is).getLines().mkString("\n")
+
+    val script =
+      """
+          JSONEditor.defaults.options.theme = 'bootstrap3';
+
+          // Initialize the editor
+          var editor = new JSONEditor(document.getElementById("content"),
+      """ + schema +
+      """);
+
+          // Set the value
+          editor.setValue(
+      """ + json.compact(json.render(rulesToJson(module.rules))) +
+      ");\n"
+    //println(script)
+    Run(script)
+  }
+*/
+  def jsonEditor(rule: XMLRule) : JsCmd = {
+    val is = getClass().getResourceAsStream("/org/rules/rule/xml/XMLRuleJSONSchema.json")
+    val schema = scala.io.Source.fromInputStream(is).getLines().mkString("\n")
+
+    val script =
+      """
+        if (typeof $.ruleEditor == 'undefined') {
+          JSONEditor.defaults.options.theme = 'bootstrap3';
+          JSONEditor.defaults.iconlib = 'bootstrap3';
+          JSONEditor.defaults.options.disable_edit_json = true;
+          JSONEditor.defaults.options.disable_properties = true;
+
+          $("#detail").empty();
+
+          // Initialize the editor
+          $.ruleEditor = new JSONEditor(document.getElementById("detail"),
+        """ + schema +
+        """);
+        }
+
+        // Set the value
+          $.ruleEditor.setValue(
+        """ +
+        json.compact(json.render(EditRules.ruleToJson(rule))) + ");\n"
+
+    Run(script)
+  }
 
   private def updateNav() : JsCmd = {
     val ifProject = XMLProject(new File("core/src/test/resources/org/rules/rule/example3"))
@@ -58,9 +115,13 @@ object Ajax {
 
   private def updateRules(module: XMLModule) : JsCmd = {
     moduleVar.set(Some(module))
-    SetHtml("content",
-      EditRules.embed
-    //  <h2>Rules</h2> ++ module.rules.foldLeft(NodeSeq.Empty) {(actual,rule) => actual ++ ruleForm(rule) ++ <br></br>}
+    //jsonEditor(module)
+    CmdPair(
+      SetHtml("content",
+        EditRules.embed
+      //  <h2>Rules</h2> ++ module.rules.foldLeft(NodeSeq.Empty) {(actual,rule) => actual ++ ruleForm(rule) ++ <br></br>}
+      ),
+      Run("$.ruleEditor = undefined;")
     )
   }
 

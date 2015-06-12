@@ -30,7 +30,8 @@ object EditRules {
   }
 
   def listRules (xhtml: NodeSeq): NodeSeq = {
-    <h2>Rules</h2> ++ Ajax.moduleVar.get.get.rules.foldLeft(NodeSeq.Empty) {(actual,rule) => actual ++ ruleSeq(rule) ++ <br></br>}
+    <h2 style="margin-left: 10px;">Rules</h2> ++
+    Ajax.moduleVar.get.get.rules.foldLeft(NodeSeq.Empty) {(actual,rule) => actual ++ ruleSeq(rule)}
   }
 
 
@@ -54,13 +55,17 @@ object EditRules {
   }
 
   def ruleOnClick(node: NodeSeq) : NodeSeq = {
+    val name = node.head.\@("rule-name")
+
     val cssTransform = ".rule [onclick]" #>
-      SHtml.ajaxInvoke(() => {
+      Ajax.jsonEditor(Ajax.moduleVar.get.get.rules.find(_.name == name).get)
+/*      SHtml.ajaxInvoke(() => {
         val name = node.head.\@("rule-name")
         ruleVar.set(Ajax.moduleVar.get.get.rules.find(_.name == name))
         println("***** click on " + name)
         SetHtml("detail", <span class="lift:embed?what=/ruledetail" />)
       })
+      */
     cssTransform(node)
   }
 
@@ -82,7 +87,7 @@ object EditRules {
          ("value" -> p.value))
       }
     ) ~
-    ("run" -> rule.run)
+    ("run" -> rule.run.getOrElse(""))
   }
 
   private def ruleSeq(rule: XMLRule) : NodeSeq = {
@@ -98,12 +103,7 @@ object EditRules {
     */
 
     <div data-lift="EditRules.ruleOnClick" rule-name={rule.name}>
-      <h3 class="rule">{rule.name}</h3>
-      requires: {rule.requires.toString()}
-      <br></br>
-      provides: {rule.provides.toString()}
-      <br></br>
-      runScript: {rule.run.toString}
+      <span class="btn btn-default rule" style="margin-top: 5px; margin-left: 10px;">{rule.name}</span>
     </div>
   }
 }

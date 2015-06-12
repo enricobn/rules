@@ -1,0 +1,65 @@
+{"schema": {
+    "title": "Rules",
+    "type": "array",
+    "format": "table",
+    "items": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name",
+          "minLength": 4
+        },
+        "tags": {
+          "type": "string",
+          "description": "Tags"
+        },
+        "requires": {
+          "type": "array",
+          "format": "table",
+          "title": "Requirements",
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "title": "Requires",
+            "properties": {
+              "token": {
+                "type": "string",
+                "title": "Token"
+              },
+              "tags": {
+                "type": "string",
+                "title": "Tags"
+              }
+            }
+          }
+        },
+        "provides": {
+          "type": "array",
+          "format": "table",
+          "title": "Provides",
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "title": "Provides",
+            "properties": {
+              "token": {
+                "type": "string",
+                "title": "Token"
+              },
+              "value": {
+                "type": "string",
+                "title": "Expression"
+              }
+            }
+          }
+        },
+        "run": {
+          "type": "string",
+          "format": "textarea",
+          "description": "Script"
+        }
+      }
+    }
+  }
+}
