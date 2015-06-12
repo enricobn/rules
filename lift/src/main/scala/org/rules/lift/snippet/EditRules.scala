@@ -6,7 +6,7 @@ package org.rules.lift.snippet
 import net.liftweb._
 import http._
 import net.liftweb.http.js.{JsCmds, JsCmd}
-import net.liftweb.http.js.JsCmds.{Run, CmdPair, SetHtml}
+import net.liftweb.http.js.JsCmds._
 import net.liftweb.json.JsonAST._
 import org.rules.lift.snippet.Ajax._
 import org.rules.rule.xml.XMLRule
@@ -27,41 +27,37 @@ object EditRules {
   private object providesVar extends RequestVar("")
   private object runVar extends RequestVar("")
 */
-  private def jsonEditor(rule: XMLRule) : JsCmd = {
+  def embed() = {
     val is = getClass().getResourceAsStream("/org/rules/rule/xml/XMLRuleJSONSchema.json")
     val schema = scala.io.Source.fromInputStream(is).getLines().mkString("\n")
 
-    val script =
+    <span class="lift:embed?what=/editrules" /> ++
+    Script(OnLoad( Run(
       """
-        if (typeof $.ruleEditor == 'undefined') {
-          JSONEditor.defaults.options.theme = 'bootstrap3';
-          JSONEditor.defaults.iconlib = 'bootstrap3';
-          JSONEditor.defaults.options.disable_edit_json = true;
-          JSONEditor.defaults.options.disable_properties = true;
-
-          $("#detail").empty();
-
-          // Initialize the editor
-          $.ruleEditor = new JSONEditor(document.getElementById("detail"),
-      """ + schema +
-        """);
+        //alert('hello');
+        if (typeof $.jsonEditor != 'undefined') {
+          $.jsonEditor.destroy();
         }
+        JSONEditor.defaults.options.theme = 'bootstrap3';
+        JSONEditor.defaults.iconlib = 'bootstrap3';
+        JSONEditor.defaults.options.disable_edit_json = true;
+        JSONEditor.defaults.options.disable_properties = true;
 
-        // Set the value
-          $.ruleEditor.setValue(
-        """ +
-        json.compact(json.render(EditRules.ruleToJson(rule))) + ");\n"
+        $("#detail").empty();
 
-    Run(script)
+        // Initialize the editor
+        $.jsonEditor = new JSONEditor(document.getElementById("detail"),
+      """ + schema + ");"
+    )))
+  }
+
+  private def jsonEditor(rule: XMLRule) : JsCmd = {
+    Run("$.jsonEditor.setValue(" + json.compact(json.render(EditRules.ruleToJson(rule))) + ");\n")
   }
 
   def listRules (xhtml: NodeSeq): NodeSeq = {
     <h2 style="margin-left: 10px;">Rules</h2> ++
       Index.moduleVar.get.get.rules.foldLeft(NodeSeq.Empty) {(actual,rule) => actual ++ render(rule)}
-  }
-
-  def embed() = {
-      <span class="lift:embed?what=/editrules" />
   }
 
   /*
