@@ -5,6 +5,8 @@ package org.rules.lift.snippet
  */
 import net.liftweb._
 import http._
+import net.liftweb.common.{Full, Empty}
+import net.liftweb.http.js.JE.JsRaw
 import net.liftweb.http.js.{JsCmds, JsCmd}
 import net.liftweb.http.js.JsCmds._
 import net.liftweb.json.JsonAST._
@@ -33,26 +35,58 @@ object EditRules {
 
     <span class="lift:embed?what=/editrules" /> ++
     Script(OnLoad( Run(
-      """
+      s"""
         //alert('hello');
-        if (typeof $.jsonEditor != 'undefined') {
-          $.jsonEditor.destroy();
+        if (typeof $$.jsonEditor != 'undefined') {
+          $$.jsonEditor.destroy();
         }
+
+        if (typeof $$.jsonFromServer == 'undefined') {
+          $$.jsonFromServer = function(v) {
+            console.log('got json from server');
+            $$.jsonValues[v.name] = v;
+            $$.jsonEditor.setValue(v);
+            $$.jsonActiveId =  v.name;
+            $$("#detail").show();
+          };
+          $$.jsonFromServerFailure = function() {
+            console.log('Error getting json from server');
+            alert('Error getting json from server.');
+          };
+        }
+
         JSONEditor.defaults.options.theme = 'bootstrap3';
         JSONEditor.defaults.iconlib = 'bootstrap3';
         JSONEditor.defaults.options.disable_edit_json = true;
         JSONEditor.defaults.options.disable_properties = true;
 
-        $("#detail").empty();
+        $$("#detail").empty();
 
+        $$("#detail").hide();
         // Initialize the editor
-        $.jsonEditor = new JSONEditor(document.getElementById("detail"),
-      """ + schema + ");"
+        $$.jsonEditor = new JSONEditor(document.getElementById("detail"), $schema);
+
+        $$.jsonEditor.on('change', function() {
+          if (typeof $$.jsonActiveId != 'undefined') {
+            $$.jsonValues[$$.jsonActiveId] = $$.jsonEditor.getValue();
+          }
+        });
+
+        $$.jsonValues = new Object();
+        $$.jsonActiveId = undefined;
+      """
     )))
   }
 
   private def jsonEditor(rule: XMLRule) : JsCmd = {
-    Run("$.jsonEditor.setValue(" + json.compact(json.render(EditRules.ruleToJson(rule))) + ");\n")
+    lazy val jsonRule = json.compact(json.render(ruleToJson(rule)))
+
+    Run(
+      s"""
+      $$.jsonEditor.setValue($jsonRule);
+      $$.getJson('id');
+      """
+    )
   }
 
   def listRules (xhtml: NodeSeq): NodeSeq = {
@@ -82,11 +116,30 @@ object EditRules {
   }
 */
 
+  private def getRule(id: String) = Index.moduleVar.get.get.rules.find(_.name == id).get
+
   def ruleOnClick(node: NodeSeq) : NodeSeq = {
     val name = node.head.\@("rule-name")
 
     val cssTransform = ".rule [onclick]" #>
-      jsonEditor(Index.moduleVar.get.get.rules.find(_.name == name).get)
+      Script(JsRaw(
+        s"""
+          //if (typeof $$.jsonActiveId != 'undefined') {
+            //$$.jsonValues[$$.jsonActiveId] = $$.jsonEditor.getValue();
+          //}
+          if (typeof $$.jsonValues['$name'] != 'undefined') {
+            $$.jsonEditor.setValue($$.jsonValues['$name']);
+            $$.jsonActiveId = '$name';
+          } else {
+        """ +
+        SHtml.jsonCall(name, new JsonContext(Full("$.jsonFromServer"), Full("$.jsonFromServerFailure")), (a:Any)=>{
+          ruleToJson(getRule(name))
+        })._2.toJsCmd
+        + "}"
+      ))
+
+
+//    jsonEditor(getRule(name))
 /*      SHtml.ajaxInvoke(() => {
         val name = node.head.\@("rule-name")
         ruleVar.set(Ajax.moduleVar.get.get.rules.find(_.name == name))
