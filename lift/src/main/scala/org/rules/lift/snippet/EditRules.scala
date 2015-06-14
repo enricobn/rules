@@ -36,12 +36,12 @@ object EditRules {
     <span class="lift:embed?what=/editrules" /> ++
     Script(OnLoad( Run(
       s"""
-        //alert('hello');
         if (typeof $$.jsonEditor != 'undefined') {
           $$.jsonEditor.destroy();
         }
 
         if (typeof $$.jsonFromServer == 'undefined') {
+          // it's the callback of getting an item from the server, v is the Json value
           $$.jsonFromServer = function(v) {
             console.log('got json from server');
             $$.jsonValues[v.name] = v;
@@ -49,8 +49,11 @@ object EditRules {
             $$.jsonActiveId =  v.name;
             $$("#detail").show();
           };
+
+          // it's the callback of the error getting an item from the server
           $$.jsonFromServerFailure = function() {
             console.log('Error getting json from server');
+            // TODO do it better
             alert('Error getting json from server.');
           };
         }
@@ -63,21 +66,26 @@ object EditRules {
         $$("#detail").empty();
 
         $$("#detail").hide();
-        // Initialize the editor
+
         $$.jsonEditor = new JSONEditor(document.getElementById("detail"), $schema);
 
+        // on change values in the editor, I update the cache
         $$.jsonEditor.on('change', function() {
           if (typeof $$.jsonActiveId != 'undefined') {
             $$.jsonValues[$$.jsonActiveId] = $$.jsonEditor.getValue();
           }
         });
 
+        // the cache of items, key=id value=json
         $$.jsonValues = new Object();
+
+        // the id of the active item
         $$.jsonActiveId = undefined;
       """
     )))
   }
 
+  /*
   private def jsonEditor(rule: XMLRule) : JsCmd = {
     lazy val jsonRule = json.compact(json.render(ruleToJson(rule)))
 
@@ -88,7 +96,7 @@ object EditRules {
       """
     )
   }
-
+*/
   def listRules (xhtml: NodeSeq): NodeSeq = {
     <h2 style="margin-left: 10px;">Rules</h2> ++
       Index.moduleVar.get.get.rules.foldLeft(NodeSeq.Empty) {(actual,rule) => actual ++ render(rule)}
@@ -124,9 +132,6 @@ object EditRules {
     val cssTransform = ".rule [onclick]" #>
       Script(JsRaw(
         s"""
-          //if (typeof $$.jsonActiveId != 'undefined') {
-            //$$.jsonValues[$$.jsonActiveId] = $$.jsonEditor.getValue();
-          //}
           if (typeof $$.jsonValues['$name'] != 'undefined') {
             $$.jsonEditor.setValue($$.jsonValues['$name']);
             $$.jsonActiveId = '$name';
