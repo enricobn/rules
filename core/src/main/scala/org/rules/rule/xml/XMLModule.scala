@@ -22,7 +22,7 @@ object XMLModule {
      // TODO add not existent module
      object t extends RewriteRule {
        override def transform(n: Node): Seq[Node] = n match {
-         case sn@Elem(_, "rule", _, _, _*) if sn.attribute("name").get.head.text == rule.name => rule.toXML()
+         case sn@Elem(_, "rule", _, _, _*) if sn.attribute("id").get.head.text == rule.id => rule.toXML()
          case other => other
        }
      }
@@ -47,12 +47,21 @@ case class XMLModule(file: File) {
 
   val rules = (xml \ "rule").map(XMLRule(_))
 
+  findDuplicates(rules)
+
   val factories = (xml \ "factory").map { factory =>
     val name = (factory \ "@name").text
     val rules = (factory \ "rule").map(XMLRule(_))
+    findDuplicates(rules)
     val create = (factory \ "create").map(_.text)
 
     XMLRuleFactory(name, rules.toSet, create.head)
   }
+
+  private def findDuplicates(rules: Seq[XMLRule]) =
+    rules.groupBy(_.id).find(_._2.size > 1) match {
+      case Some(x) => throw new IllegalStateException("duplicated id=" + x._2.head.id)
+      case _ =>
+    }
 }
 

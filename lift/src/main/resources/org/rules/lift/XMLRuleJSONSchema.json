@@ -3,6 +3,12 @@
     "format": "grid",
     "title": "detail",
     "properties": {
+      "id" : {
+        "type": "string",
+        "options": {
+          "hidden": true
+        }
+      },
       "name": {
         "type": "string",
         "title": "Name",

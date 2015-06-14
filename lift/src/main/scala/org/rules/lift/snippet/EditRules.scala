@@ -30,7 +30,7 @@ object EditRules {
   private object runVar extends RequestVar("")
 */
   def embed() = {
-    val is = getClass().getResourceAsStream("/org/rules/rule/xml/XMLRuleJSONSchema.json")
+    val is = getClass().getResourceAsStream("/org/rules/lift/XMLRuleJSONSchema.json")
     val schema = scala.io.Source.fromInputStream(is).getLines().mkString("\n")
 
     <span class="lift:embed?what=/editrules" /> ++
@@ -161,6 +161,7 @@ object EditRules {
   }
 
   def ruleToJson(rule: XMLRule) : JValue = {
+    ("id" -> rule.id) ~
     ("name" -> rule.name) ~
     ("tags" -> rule.tags) ~
     ("requires" -> rule.requires.map{ r =>

@@ -18,7 +18,7 @@ class XMLSuite extends FunSuite {
     val module = XMLModule(tmp)
 
     val rule =
-        <rule name="Oracle" tags="dbType=repo,type=cons">
+        <rule id="2" name="Oracle" tags="dbType=repo,type=cons">
           <requires token="test"/>
           <provides token="test">'test'</provides>
           <run>
@@ -30,7 +30,7 @@ class XMLSuite extends FunSuite {
         </rule>
 
     val newModule = XMLModule.saveAndReload(module, XMLRule(rule))
-    val oracle = newModule.rules.find(_.name == "Oracle").get
+    val oracle = newModule.rules.find(_.id == "2").get
     assert(oracle.requires.head.token == "test")
   }
 

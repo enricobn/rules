@@ -11,7 +11,7 @@ class EditRulesSuite extends FunSuite {
 
     test("json") {
       val xml =
-        <rule name="test" tags="dbType=main">
+        <rule id="1" name="test" tags="dbType=main">
           <requires token="req1" tags="db=dev"></requires>
           <requires token="req2" tags="db=dev"></requires>
           <provides token="pr1">r0 + r1</provides>

@@ -29,7 +29,17 @@ case class XMLProvides(token: String, value: Option[String])
 object XMLRule {
 
   def apply(xml: Node) : XMLRule = {
+    val id = (xml \ "@id").text
+
+    if (id == null || id.isEmpty) {
+      throw new IllegalArgumentException("id is required.")
+    }
+
     val name = (xml \ "@name").text
+
+    if (name == null || name.isEmpty) {
+      throw new IllegalArgumentException("name is required.")
+    }
 
     val tags = (xml \ "@tags").text
 
@@ -54,14 +64,14 @@ object XMLRule {
     }
 
     if (run == null || run.isEmpty) {
-      XMLRule(name, tags, requirements.toList, provided.toList, None)
+      XMLRule(id, name, tags, requirements.toList, provided.toList, None)
     } else {
-      XMLRule(name, tags, requirements.toList, provided.toList, Some(run.head))
+      XMLRule(id, name, tags, requirements.toList, provided.toList, Some(run.head))
     }
   }
 }
 
-case class XMLRule(name: String, tags: String, requires: Seq[XMLRequirement], provides: Seq[XMLProvides],
+case class XMLRule(id: String, name: String, tags: String, requires: Seq[XMLRequirement], provides: Seq[XMLProvides],
                    run: Option[String]) {
 
   def toRule() : Rule[String] = {
@@ -127,7 +137,7 @@ case class XMLRule(name: String, tags: String, requires: Seq[XMLRequirement], pr
   }
 */
   def toXML() : NodeSeq = {
-    <rule name={name} tags={tags}>
+    <rule id={id} name={name} tags={tags}>
       {for (requirement <- requires) yield
        <requires token={requirement.token} tags={requirement.tags.toString}></requires>
       }
