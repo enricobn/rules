@@ -10,58 +10,112 @@ import scala.xml.transform.{RuleTransformer, RewriteRule}
 /**
  * Created by enrico on 6/7/15.
  */
-object XMLModule {
 
-   /**
-    * if exists replace the rule in the module, otherwise adds it, then save the module and reloads it
-    * @param module with rule
-    * @param rule to replace
-    * @return
-    */
-   def saveAndReload(module: XMLModule, rule: XMLRule) : XMLModule = {
-     // TODO add not existent module
-     object t extends RewriteRule {
-       override def transform(n: Node): Seq[Node] = n match {
-         case sn@Elem(_, "rule", _, _, _*) if sn.attribute("id").get.head.text == rule.id => rule.toXML()
-         case other => other
-       }
-     }
+case class XMLModuleFile(file: File) {
+  lazy val xmlModule = XMLModule(file.getName, XML.load(new FileInputStream(file)))
 
-     val transformed = new RuleTransformer(t).transform(module.xml).head
+  def updateAndSave(changedRules: Seq[XMLRule]) : XMLModuleFile = {
+    val updated = xmlModule.update(changedRules)
+    updated.save(file)
 
-     val prettyPrinter = new scala.xml.PrettyPrinter(80, 2)
-     val prettyXml = prettyPrinter.format(transformed)
-
-     Files.write(module.file.toPath, prettyXml.getBytes(StandardCharsets.UTF_8))
-
- //    XML.save(module.file.getAbsolutePath, new RuleTransformer(t).transform(module.xml).head)
-     XMLModule(module.file)
-   }
-
- }
-
-case class XMLModule(file: File) {
-  val name = file.getName
-
-  val xml = XML.load(new FileInputStream(file))
-
-  val rules = (xml \ "rule").map(XMLRule(_))
-
-  findDuplicates(rules)
-
-  val factories = (xml \ "factory").map { factory =>
-    val name = (factory \ "@name").text
-    val rules = (factory \ "rule").map(XMLRule(_))
-    findDuplicates(rules)
-    val create = (factory \ "create").map(_.text)
-
-    XMLRuleFactory(name, rules.toSet, create.head)
+    new XMLModuleFile(file) {
+      // since I don't want to reload the file!
+      override lazy val xmlModule = updated
+    }
   }
 
-  private def findDuplicates(rules: Seq[XMLRule]) =
+}
+
+object XMLModule {
+
+  def findDuplicates(rules: Seq[XMLRule]) =
     rules.groupBy(_.id).find(_._2.size > 1) match {
       case Some(x) => throw new IllegalStateException("duplicated id=" + x._2.head.id)
       case _ =>
     }
+
+  def apply(name: String, xml: NodeSeq) : XMLModule = {
+    val rules = (xml \ "rule").map(XMLRule(_))
+
+    XMLModule.findDuplicates(rules)
+
+    val factories = (xml \ "factory").map { factory =>
+      val name = (factory \ "@name").text
+      val rules = (factory \ "rule").map(XMLRule(_))
+      XMLModule.findDuplicates(rules)
+      val create = (factory \ "create").map(_.text)
+
+      XMLRuleFactory(name, rules.toSet, create.head)
+    }
+
+    new XMLModule(name, rules, factories) {
+      override def toXML() = xml
+    }
+  }
+}
+
+case class XMLModule(name: String, rules: Seq[XMLRule], factories: Seq[XMLRuleFactory]) {
+  def toXML() : NodeSeq =
+    <rules>
+      {for (rule <- rules) yield
+        rule.toXML()
+      }
+      {for (factory <- factories) yield
+        factory.toXML()
+      }
+    </rules>
+
+  /**
+   * if exists replace the rule in the module
+   * @param changedRules to replace
+   * @return
+   */
+  def update(changedRules: Seq[XMLRule]) : XMLModule = {
+
+    val updatedRules = rules.map{ rule =>
+      if (changedRules.exists(_.id == rule.id)) {
+        changedRules.find(_.id == rule.id).get
+      } else {
+        rule
+      }
+    }
+
+    val addedRules = changedRules.filter{ rule => !rules.exists(_.id == rule.id)}
+
+    XMLModule(name, updatedRules ++ addedRules, factories)
+
+    /*
+    // TODO add not existent module
+    object t extends RewriteRule {
+      private def containsRule(id: String) = {
+        changedRules.exists(_.id == id)
+      }
+
+      override def transform(n: Node): Seq[Node] = n match {
+        case rulesE@Elem(_, "rules", _, _, _*) =>
+          <rules>{
+            (rulesE.descendant \ "rule").map{ rule =>
+              val id = rule.attribute("id").get.head.text
+              if (containsRule(id)) {
+                changedRules.find(_.id == id).get.toXML()
+              } else {
+                rule
+              }
+            }
+            }</rules>
+        case other => other
+      }
+    }
+
+    XMLModule(name, new RuleTransformer(t).transform(toXML()).head)
+    */
+  }
+
+  def save(file: File) = {
+    val prettyPrinter = new scala.xml.PrettyPrinter(80, 2)
+    val prettyXml = prettyPrinter.format(toXML().head)
+
+    Files.write(file.toPath, prettyXml.getBytes(StandardCharsets.UTF_8))
+  }
 }
 

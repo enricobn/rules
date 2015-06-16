@@ -5,6 +5,8 @@ import javax.script.{ScriptEngine, ScriptEngineManager}
 import org.rules.rule.{RuleFactory, Rule}
 import org.rules.{UI, JavaUtils}
 
+import scala.xml.NodeSeq
+
 /**
  * Created by enrico on 6/7/15.
  */
@@ -27,4 +29,13 @@ case class XMLRuleFactory(name: String, rules: Set[XMLRule], createScript: Strin
        throw new RuntimeException()
      }
    }
+
+   def toXML() : NodeSeq =
+     <factory name={name}>
+       {for (rule <- rules) yield
+         rule.toXML()
+       }
+       <create>{scala.xml.PCData(createScript)}</create>
+     </factory>
+
  }

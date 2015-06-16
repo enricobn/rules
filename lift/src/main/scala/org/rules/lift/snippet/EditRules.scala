@@ -6,17 +6,18 @@ package org.rules.lift.snippet
 import net.liftweb._
 import http._
 import net.liftweb.common.{Full, Empty}
-import net.liftweb.http.js.JE.JsRaw
-import net.liftweb.http.js.{JsCmds, JsCmd}
+import net.liftweb.http.SHtml._
+import net.liftweb.http.js.JE.{JsObj, JsRaw}
+import net.liftweb.http.js.JsCmd
+import net.liftweb.http.js.JsExp._
 import net.liftweb.http.js.JsCmds._
-import net.liftweb.json.JsonAST._
-import org.rules.lift.snippet.Ajax._
-import org.rules.rule.xml.XMLRule
-import scala.util.parsing.json.JSONObject
-import scala.xml.{Text, NodeSeq}
+import net.liftweb.json.JsonAST.JObject
+import net.liftweb.json.JsonAST.JValue
+import org.rules.rule.xml.{XMLModule, XMLRule}
+import scala.xml.{Elem, Text, NodeSeq}
 import net.liftweb.util.BindHelpers._
 import net.liftweb.json.Xml.{toJson, toXml}
-import net.liftweb.json.{DefaultFormats, pretty, render}
+import net.liftweb.json._
 import net.liftweb.json.JsonDSL._
 
 /**
@@ -44,9 +45,9 @@ object EditRules {
           // it's the callback of getting an item from the server, v is the Json value
           $$.jsonFromServer = function(v) {
             console.log('got json from server');
-            $$.jsonValues[v.name] = v;
+            $$.jsonValues[v.id] = v;
             $$.jsonEditor.setValue(v);
-            $$.jsonActiveId =  v.name;
+            $$.jsonActiveId =  v.id;
             $$("#detail").show();
           };
 
@@ -97,9 +98,42 @@ object EditRules {
     )
   }
 */
+
+  def saveButton (xhtml: NodeSeq): NodeSeq = {
+    SHtml.jsonButton(Text("Save"), JsRaw("$.jsonValues"), (values : JValue) => {
+      println(values)
+      val rules = values match {
+        case JObject(x :: xs) =>
+          val l = x :: xs
+          l.foldLeft(List.empty[XMLRule]){ (actual, field) => actual.:+(jsonToRule(field))}
+          //l.foreach{ field => println("##### Saved " + jsonToRule(field))}
+        case _ => List.empty[XMLRule]
+      }
+
+      val updatedModule = Index.moduleVar.get.get.updateAndSave(rules)
+
+      Index.moduleVar.set(Some(updatedModule))
+
+      val updatedProject = Index.projectVar.get.get.updateModule(updatedModule)
+      Index.projectVar.set(Some(updatedProject))
+
+      /*
+      CmdPair(
+      SetHtml("module_" + updatedModule.xmlModule.name,
+        ajaxButton("Rules", () => Index.updateRules(updatedModule), ("class", "btn btn-default rules-nav"), ("id","module_" + updatedModule.xmlModule.name)))
+      , JsRaw("{\"result\": \"OK\"}"))
+      */
+      new JsCmd {
+        def toJsCmd = JsObj(("result", "OK")).toJsCmd
+      }
+
+      //Noop
+    }, new JsonContext(Empty, Empty))
+  }
+
   def listRules (xhtml: NodeSeq): NodeSeq = {
     <h2 style="margin-left: 10px;">Rules</h2> ++
-      Index.moduleVar.get.get.rules.foldLeft(NodeSeq.Empty) {(actual,rule) => actual ++ render(rule)}
+      Index.moduleVar.get.get.xmlModule.rules.foldLeft(NodeSeq.Empty) {(actual,rule) => actual ++ render(rule)}
   }
 
   /*
@@ -124,21 +158,21 @@ object EditRules {
   }
 */
 
-  private def getRule(id: String) = Index.moduleVar.get.get.rules.find(_.name == id).get
+  private def getRule(id: String) = Index.moduleVar.get.get.xmlModule.rules.find(_.id == id).get
 
   def ruleOnClick(node: NodeSeq) : NodeSeq = {
-    val name = node.head.\@("rule-name")
+    val id = node.head.\@("rule-id")
 
     val cssTransform = ".rule [onclick]" #>
       Script(JsRaw(
         s"""
-          if (typeof $$.jsonValues['$name'] != 'undefined') {
-            $$.jsonEditor.setValue($$.jsonValues['$name']);
-            $$.jsonActiveId = '$name';
+          if (typeof $$.jsonValues['$id'] != 'undefined') {
+            $$.jsonEditor.setValue($$.jsonValues['$id']);
+            $$.jsonActiveId = '$id';
           } else {
         """ +
-        SHtml.jsonCall(name, new JsonContext(Full("$.jsonFromServer"), Full("$.jsonFromServerFailure")), (a:Any)=>{
-          ruleToJson(getRule(name))
+        SHtml.jsonCall(id, new JsonContext(Full("$.jsonFromServer"), Full("$.jsonFromServerFailure")), (a:Any)=>{
+          ruleToJson(getRule(id))
         })._2.toJsCmd
         + "}"
       ))
@@ -189,7 +223,7 @@ object EditRules {
     println(jsonToRule(json).toXML())
     */
 
-    <div data-lift="EditRules.ruleOnClick" rule-name={rule.name}>
+    <div data-lift="EditRules.ruleOnClick" rule-id={rule.id}>
       <span class="btn btn-default rule" style="margin-top: 5px; margin-left: 10px;">{rule.name}</span>
     </div>
   }

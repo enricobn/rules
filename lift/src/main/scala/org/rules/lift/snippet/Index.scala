@@ -7,7 +7,7 @@ import net.liftweb.http.SHtml._
 import net.liftweb.util.Helpers._
 import net.liftweb.http.js.JsCmd
 import net.liftweb.http.js.JsCmds.{SetHtml, CmdPair, Run}
-import org.rules.rule.xml.{XMLModule, XMLProject}
+import org.rules.rule.xml.{XMLModuleFile, XMLModule, XMLProject}
 
 import scala.xml.{NodeSeq, Text}
 
@@ -18,9 +18,9 @@ import scala.xml.{NodeSeq, Text}
  */
 object Index {
   object projectVar extends SessionVar[Option[XMLProject]](None)
-  object moduleVar extends SessionVar[Option[XMLModule]](None)
+  object moduleVar extends SessionVar[Option[XMLModuleFile]](None)
 
-  private def updateRules(module: XMLModule) : JsCmd = {
+  def updateRules(module: XMLModuleFile) : JsCmd = {
     moduleVar.set(Some(module))
     //jsonEditor(module)
     CmdPair(
@@ -41,15 +41,15 @@ object Index {
   private def modules() : NodeSeq = {
     val p = projectVar.get
     p.get.modules.foldLeft(NodeSeq.Empty) {(actual,module) => actual ++
-      <h5 class="rules-nav">{module.name}</h5> ++
-      ajaxButton("Rules", () => updateRules(module), ("class", "btn btn-default rules-nav")) ++
+      <h5 class="rules-nav">{module.xmlModule.name}</h5> ++
+      ajaxButton("Rules", () => updateRules(module), ("class", "btn btn-default rules-nav"), ("id","module_" + module.xmlModule.name)) ++
       <br></br> ++
-      ajaxButton("Factories", () => updateFactories(module), ("class", "btn btn-default rules-nav"))
+      ajaxButton("Factories", () => updateFactories(module.xmlModule), ("class", "btn btn-default rules-nav"))
     }
   }
 
-  private def updateNav() : JsCmd = {
-    val ifProject = XMLProject(new File("core/src/test/resources/org/rules/rule/example3"))
+  private def updateNav(folder: File) : JsCmd = {
+    val ifProject = XMLProject(folder)
 
     if (ifProject.value.isEmpty) {
       return Run("alert('Failed to load project');")
@@ -82,7 +82,9 @@ object Index {
     }
 
     def openProject(in: NodeSeq) : NodeSeq = {
-      ajaxButton(Text("Load project"), () => updateNav)
+      new File("data").listFiles().filter(_.isDirectory).foldLeft(NodeSeq.Empty) { (actual, folder) =>
+        actual ++ ajaxButton(Text(folder.getName), () => updateNav(folder)) ++ <br />
+      }
       //a(() => showNav, in)
     }
     // I bind the openProject method to element with id 'open-project'
