@@ -1,7 +1,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
         "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:lift="http://liftweb.net/">
-  <head>
+<head>
     <title>Rules</title>
 
     <link rel="stylesheet" type="text/css" href="/css/index.css"></link>
@@ -9,32 +9,34 @@
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap-theme.min.css"></link>
 
     <script type="text/javascript" src="/js/jquery-1.11.3.min.js"></script>
-      <script type="text/javascript" src="/js/jsoneditor.min.js"></script>
-      <script>
-            function pack() {
-                //console.log('pack');
-                var margin = 0;
-                var height = $(this).height() - $('#header').outerHeight() - $('#footer').outerHeight() - 2 * margin;
-                var left = $('#nav').outerWidth() + margin;
-                var top = $('#header').outerHeight() + margin;
-                //console.log($('#nav').outerWidth(true));
-                console.log('height=' + height + ', left=' + left + ', top=' + top);
-                $('#content').height(height);
-                $('#content').css({'top': top + 'px'});
-                $('#content').css({'left': left + 'px'});
-                $('#nav').css({'top': top + 'px'});
-                //console.log($('#nav'));
-            }
+    <script type="text/javascript" src="/js/jsoneditor.min.js"></script>
+    <!--script type="text/javascript" src="/js/ace.js"></script-->
 
-          $(document).ready(function () {
-            $(window).resize(pack);
+    <script>
+    function pack() {
+        //console.log('pack');
+        var margin = 0;
+        var height = $(this).height() - $('#header').outerHeight() - $('#footer').outerHeight() - 2 * margin;
+        var left = $('#nav').outerWidth() + margin;
+        var top = $('#header').outerHeight() + margin;
+        //console.log($('#nav').outerWidth(true));
+        console.log('height=' + height + ', left=' + left + ', top=' + top);
+        $('#content').height(height);
+        $('#content').css({'top': top + 'px'});
+        $('#content').css({'left': left + 'px'});
+        $('#nav').css({'top': top + 'px'});
+        //console.log($('#nav'));
+    }
 
-            pack();
-          });
+    $(document).ready(function () {
+        $(window).resize(pack);
+        pack();
+    });
+
     </script>
-  </head>
+</head>
 
-  <body>
+<body>
     <lift:bind name="main-content" />
-  </body>
+</body>
 </html>

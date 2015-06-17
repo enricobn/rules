@@ -11,14 +11,16 @@ import scala.xml.transform.{RuleTransformer, RewriteRule}
  * Created by enrico on 6/7/15.
  */
 
-case class XMLModuleFile(file: File) {
-  lazy val xmlModule = XMLModule(file.getName, XML.load(new FileInputStream(file)))
+case class XMLModuleFile(id: String, file: File) {
+  private val name = file.getName().substring(0,file.getName.length - 10)
+
+  lazy val xmlModule = XMLModule(name, XML.load(new FileInputStream(file)))
 
   def updateAndSave(changedRules: Seq[XMLRule]) : XMLModuleFile = {
     val updated = xmlModule.update(changedRules)
     updated.save(file)
 
-    new XMLModuleFile(file) {
+    new XMLModuleFile(id, file) {
       // since I don't want to reload the file!
       override lazy val xmlModule = updated
     }
@@ -112,10 +114,12 @@ case class XMLModule(name: String, rules: Seq[XMLRule], factories: Seq[XMLRuleFa
   }
 
   def save(file: File) = {
+/* commented since it removes new lines from CDATA, but I need them for scripts
     val prettyPrinter = new scala.xml.PrettyPrinter(80, 2)
-    val prettyXml = prettyPrinter.format(toXML().head)
+    val prettyXml = prettyPrinter.format(xml)
+    */
 
-    Files.write(file.toPath, prettyXml.getBytes(StandardCharsets.UTF_8))
+    Files.write(file.toPath, toXML().head.toString().getBytes(StandardCharsets.UTF_8))
   }
 }
 

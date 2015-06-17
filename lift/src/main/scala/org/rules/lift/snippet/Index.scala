@@ -42,11 +42,21 @@ object Index {
     val p = projectVar.get
     p.get.modules.foldLeft(NodeSeq.Empty) {(actual,module) => actual ++
       <h5 class="rules-nav">{module.xmlModule.name}</h5> ++
-      ajaxButton("Rules", () => updateRules(module), ("class", "btn btn-default rules-nav"), ("id","module_" + module.xmlModule.name)) ++
+      rulesButton(module) ++
       <br></br> ++
-      ajaxButton("Factories", () => updateFactories(module.xmlModule), ("class", "btn btn-default rules-nav"))
+      factoriesButton(module)
     }
   }
+
+  def rulesButtonId(module: XMLModuleFile) = "rules_button_" + module.id
+
+  def factoriesButtonId(module: XMLModuleFile) = "factories_button_" + module.id
+
+  def rulesButton(module: XMLModuleFile) =
+    ajaxButton("Rules", () => updateRules(module), ("class", "btn btn-default rules-nav"), ("id", rulesButtonId(module)))
+
+  def factoriesButton(module: XMLModuleFile) =
+    ajaxButton("Factories", () => updateRules(module), ("class", "btn btn-default rules-nav"), ("id", factoriesButtonId(module)))
 
   private def updateNav(folder: File) : JsCmd = {
     val ifProject = XMLProject(folder)

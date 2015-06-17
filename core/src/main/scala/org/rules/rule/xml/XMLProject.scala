@@ -20,7 +20,8 @@ object XMLProject {
    }
 
    def apply(name: String, files: Seq[File]) : XMLProject = {
-     val modules = files.map (XMLModuleFile(_))
+     var count = 0
+     val modules = files.map (XMLModuleFile({count += 1; count}.toString, _))
      new XMLProject(name, modules.toSet)
    }
 

@@ -3,6 +3,8 @@ package org.rules.lift.snippet
 /**
  * Created by enrico on 6/5/15.
  */
+
+import net.liftweb
 import net.liftweb._
 import http._
 import net.liftweb.common.{Full, Empty}
@@ -13,7 +15,7 @@ import net.liftweb.http.js.JsExp._
 import net.liftweb.http.js.JsCmds._
 import net.liftweb.json.JsonAST.JObject
 import net.liftweb.json.JsonAST.JValue
-import org.rules.rule.xml.{XMLModule, XMLRule}
+import org.rules.rule.xml.{XMLProvides, XMLModule, XMLRule}
 import scala.xml.{Elem, Text, NodeSeq}
 import net.liftweb.util.BindHelpers._
 import net.liftweb.json.Xml.{toJson, toXml}
@@ -99,7 +101,30 @@ object EditRules {
   }
 */
 
-  def saveButton (xhtml: NodeSeq): NodeSeq = {
+  def saveButton (node: NodeSeq): NodeSeq = {
+    val cssTransform = "button [onclick]" #>
+          SHtml.jsonCall(JsRaw("$.jsonValues"), new JsContext(Empty, Empty), (values: JValue)=>{
+            println(values)
+            val rules = values match {
+              case JObject(x :: xs) =>
+                val l = x :: xs
+                l.foldLeft(List.empty[XMLRule]){ (actual, field) => actual.:+(jsonToRule(field.value))}
+              //l.foreach{ field => println("##### Saved " + jsonToRule(field))}
+              case _ => List.empty[XMLRule]
+            }
+
+            val updatedModule = Index.moduleVar.get.get.updateAndSave(rules)
+
+            Index.moduleVar.set(Some(updatedModule))
+
+            val updatedProject = Index.projectVar.get.get.updateModule(updatedModule)
+            Index.projectVar.set(Some(updatedProject))
+
+            Replace(Index.rulesButtonId(updatedModule), Index.rulesButton(updatedModule))
+          })._2.toJsCmd
+
+    cssTransform(node)
+    /*
     SHtml.jsonButton(Text("Save"), JsRaw("$.jsonValues"), (values : JValue) => {
       println(values)
       val rules = values match {
@@ -129,6 +154,7 @@ object EditRules {
 
       //Noop
     }, new JsonContext(Empty, Empty))
+    */
   }
 
   def listRules (xhtml: NodeSeq): NodeSeq = {
@@ -190,9 +216,64 @@ object EditRules {
   }
 
   def jsonToRule(json: JValue) : XMLRule = {
-    implicit val formats = DefaultFormats
+
+    /*
+    class FooSerializer extends Serializer[XMLRule] {
+      private val Class = classOf[XMLRule]
+
+      def deserialize(implicit format: Formats): PartialFunction[(TypeInfo,
+         JValue), XMLRule] = {
+        case (TypeInfo(Class, _), json) => json match {
+          case JString(s) =>
+            println("deserialize " + s)
+            s
+          case x => json.extract(x)
+        }
+      }
+
+      def serialize(implicit format: Formats): PartialFunction[Any, liftweb.json.JValue] =
+      {
+        case f: String => JString(f)
+        case x => throw new MappingException("Can't convert " + x + " to JString")
+      }
+    }
+    */
+
+    def rawStringSe(name: String): PartialFunction[(String, Any), Option[(String, Any)]] = {
+      case (`name`, x : String) => Some(`name`, x)
+    }
+
+    def rawStringDe(name: String): PartialFunction[JField, JField] = {
+      case JField(`name`, x) => JField(`name`, x)
+    }
+
+    implicit val formats = DefaultFormats + FieldSerializer[Pippo]() + FieldSerializer[Pippo](rawStringSe("run"), rawStringDe("run")) +
+      FieldSerializer[XMLRule]() + FieldSerializer[XMLRule](rawStringSe("run"), rawStringDe("run"))
+
+    /*
+    + new CustomSerializer[XMLRule](ser => ( {
+      case JObject(JField("rule", JString(x)) :: Nil) => Simple(x)
+    }, {
+      case simple: Simple => JObject(JField("y", simple.x) :: Nil)
+    }))
+      */
+
+    case class Pippo(run: String)
+
+    println(compact(JsonAST.render(("run" -> "hello\nciupa")))) //{\"run\":\"hello\"}"))
+    println(Serialization.read[Pippo](compact(JsonAST.render(("run" -> "hello\nciupa"))))) //{\"run\":\"hello\"}"))
+
+    println(Serialization.write(json))
+    println(Serialization.read[XMLRule](compactRender(json)))
+
     json.extract[XMLRule]
   }
+
+  def optionToString(s: Option[String]) : String =
+    s match {
+      case Some(s) => s
+      case _ => ""
+    }
 
   def ruleToJson(rule: XMLRule) : JValue = {
     ("id" -> rule.id) ~
@@ -208,7 +289,7 @@ object EditRules {
          ("value" -> p.value))
       }
     ) ~
-    ("run" -> rule.run.getOrElse(""))
+    ("run" -> rule.run)
   }
 
   private def render(rule: XMLRule) : NodeSeq = {

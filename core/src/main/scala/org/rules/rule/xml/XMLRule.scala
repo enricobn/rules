@@ -11,7 +11,7 @@ import org.rules.{JavaUtils, UI}
 
 import scala.collection.immutable.Range
 import scala.xml.transform.{RewriteRule, RuleTransformer}
-import scala.xml.{Elem, Node, NodeSeq, XML}
+import scala.xml._
 
 /**
  * Created by enrico on 5/21/15.
@@ -24,7 +24,7 @@ object XMLRequirement {
 
 case class XMLRequirement(token: String, tags: String)
 
-case class XMLProvides(token: String, value: Option[String])
+case class XMLProvides(token: String, value: String)
 
 object XMLRule {
 
@@ -52,11 +52,7 @@ object XMLRule {
     val provided = (xml \ "provides").map { provides =>
       val token = (provides \ "@token").text
       val value = provides.text
-      if (value == null || value.isEmpty) {
-        XMLProvides(token, None)
-      } else {
-        XMLProvides(token, Some(value))
-      }
+      XMLProvides(token, value)
     }
 
     val run = (xml \ "run").map{ run =>
@@ -64,15 +60,15 @@ object XMLRule {
     }
 
     if (run == null || run.isEmpty) {
-      XMLRule(id, name, tags, requirements.toList, provided.toList, None)
+      XMLRule(id, name, tags, requirements.toList, provided.toList, "")
     } else {
-      XMLRule(id, name, tags, requirements.toList, provided.toList, Some(run.head))
+      XMLRule(id, name, tags, requirements.toList, provided.toList, run.head)
     }
   }
 }
 
 case class XMLRule(id: String, name: String, tags: String, requires: Seq[XMLRequirement], provides: Seq[XMLProvides],
-                   run: Option[String]) {
+                   run: String) {
 
   def toRule() : Rule[String] = {
     new Rule[String] {
@@ -90,16 +86,17 @@ case class XMLRule(id: String, name: String, tags: String, requires: Seq[XMLRequ
         Range(0, XMLRule.this.requires.size).foreach { i =>
           engine.put("r" + i, in(XMLRule.this.requires(i)))
         }
-        val providedValues = XMLRule.this.provides.filter{ p => p.value.isDefined }
+        val providedValues = XMLRule.this.provides.filter{ p => !p.value.isEmpty }
 
         val result = providedValues.map{ p =>
-          val v = engine.eval("return (" + p.value.get + ")")
+          val v = engine.eval("return (" + p.value + ")")
           (p.token, v)
         }.toMap
 
-        XMLRule.this.run match {
-          case Some(script) => result ++ JavaUtils.eval(engine, script)
-          case _ => result
+        if (!XMLRule.this.run.isEmpty) {
+          result ++ JavaUtils.eval(engine, XMLRule.this.run)
+        } else {
+          result
         }
       }
 
@@ -136,6 +133,7 @@ case class XMLRule(id: String, name: String, tags: String, requires: Seq[XMLRequ
 
   }
 */
+
   def toXML() : NodeSeq = {
     <rule id={id} name={name} tags={tags}>
       {for (requirement <- requires) yield
@@ -144,11 +142,7 @@ case class XMLRule(id: String, name: String, tags: String, requires: Seq[XMLRequ
       {for (provider <- provides) yield
         <provides token={provider.token}>{provider.value}</provides>
       }
-      {run match {
-        case Some(script) if script.nonEmpty => <run>{scala.xml.PCData(script)}</run>
-        case _ =>
-        }
-      }
+      {if (!run.isEmpty) <run>{PCData(run)}</run>}
     </rule>
   }
 
