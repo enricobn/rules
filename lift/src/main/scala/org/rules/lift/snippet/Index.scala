@@ -6,7 +6,7 @@ import net.liftweb.http.{SessionVar, SHtml}
 import net.liftweb.http.SHtml._
 import net.liftweb.util.Helpers._
 import net.liftweb.http.js.JsCmd
-import net.liftweb.http.js.JsCmds.{SetHtml, CmdPair, Run}
+import net.liftweb.http.js.JsCmds.{Replace, SetHtml, CmdPair, Run}
 import org.rules.rule.xml.{XMLModuleFile, XMLModule, XMLProject}
 
 import scala.xml.{NodeSeq, Text}
@@ -20,7 +20,7 @@ object Index {
   object projectVar extends SessionVar[Option[XMLProject]](None)
   object moduleVar extends SessionVar[Option[XMLModuleFile]](None)
 
-  def updateRules(module: XMLModuleFile) : JsCmd = {
+  private def updateRules(module: XMLModuleFile) : JsCmd = {
     moduleVar.set(Some(module))
     //jsonEditor(module)
     CmdPair(
@@ -48,14 +48,20 @@ object Index {
     }
   }
 
-  def rulesButtonId(module: XMLModuleFile) = "rules_button_" + module.id
+  def updateRulesButton(module: XMLModuleFile) : JsCmd =
+    Replace(rulesButtonId(module), rulesButton(module))
 
-  def factoriesButtonId(module: XMLModuleFile) = "factories_button_" + module.id
+  def updateFactoriesButton(module: XMLModuleFile) : JsCmd =
+    Replace(factoriesButtonId(module), factoriesButton(module))
 
-  def rulesButton(module: XMLModuleFile) =
+  private def rulesButtonId(module: XMLModuleFile) = "rules_button_" + module.id
+
+  private def factoriesButtonId(module: XMLModuleFile) = "factories_button_" + module.id
+
+  private def rulesButton(module: XMLModuleFile) =
     ajaxButton("Rules", () => updateRules(module), ("class", "btn btn-default rules-nav"), ("id", rulesButtonId(module)))
 
-  def factoriesButton(module: XMLModuleFile) =
+  private def factoriesButton(module: XMLModuleFile) =
     ajaxButton("Factories", () => updateRules(module), ("class", "btn btn-default rules-nav"), ("id", factoriesButtonId(module)))
 
   private def updateNav(folder: File) : JsCmd = {

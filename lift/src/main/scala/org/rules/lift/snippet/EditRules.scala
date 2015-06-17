@@ -120,7 +120,7 @@ object EditRules {
             val updatedProject = Index.projectVar.get.get.updateModule(updatedModule)
             Index.projectVar.set(Some(updatedProject))
 
-            Replace(Index.rulesButtonId(updatedModule), Index.rulesButton(updatedModule))
+            Index.updateRulesButton(updatedModule)
           })._2.toJsCmd
 
     cssTransform(node)

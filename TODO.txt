@@ -1,5 +1,7 @@
-- refactor Index.scala to update himself Rules and Facories instead of publid rulesButtonId factoryButtonId
-- put all the model stuff in a single file (getProjects, getRules save etc.)
 - highlight current project / Rules (or Factories) button / Rule (or Factory)
 - review EditRules: test if jsonToRule has problems with \n, otherwise remove unnecessary code (see below)
 - extract useful commented code for the future
+- refactor names with meanings, I think:
+  - Index.scala is a view (probably the only view) : MainView ?
+  - EditRules.scala is a controller: RulesController?
+  - make the model (getProjects, getRules, save etc.): MainModel?
