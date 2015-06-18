@@ -238,7 +238,7 @@ object EditRules {
       }
     }
     */
-
+/*
     def rawStringSe(name: String): PartialFunction[(String, Any), Option[(String, Any)]] = {
       case (`name`, x : String) => Some(`name`, x)
     }
@@ -246,25 +246,14 @@ object EditRules {
     def rawStringDe(name: String): PartialFunction[JField, JField] = {
       case JField(`name`, x) => JField(`name`, x)
     }
+*/
+    implicit val formats = DefaultFormats //+ FieldSerializer[XMLRule]() + FieldSerializer[XMLRule](rawStringSe("run"), rawStringDe("run"))
 
-    implicit val formats = DefaultFormats + FieldSerializer[Pippo]() + FieldSerializer[Pippo](rawStringSe("run"), rawStringDe("run")) +
-      FieldSerializer[XMLRule]() + FieldSerializer[XMLRule](rawStringSe("run"), rawStringDe("run"))
 
-    /*
-    + new CustomSerializer[XMLRule](ser => ( {
-      case JObject(JField("rule", JString(x)) :: Nil) => Simple(x)
-    }, {
-      case simple: Simple => JObject(JField("y", simple.x) :: Nil)
-    }))
-      */
+    //println(compact(JsonAST.render(("run" -> "hello\nciupa")))) //{\"run\":\"hello\"}"))
 
-    case class Pippo(run: String)
-
-    println(compact(JsonAST.render(("run" -> "hello\nciupa")))) //{\"run\":\"hello\"}"))
-    println(Serialization.read[Pippo](compact(JsonAST.render(("run" -> "hello\nciupa"))))) //{\"run\":\"hello\"}"))
-
-    println(Serialization.write(json))
-    println(Serialization.read[XMLRule](compactRender(json)))
+    //println(Serialization.write(json))
+    //println(Serialization.read[XMLRule](compactRender(json)))
 
     json.extract[XMLRule]
   }
