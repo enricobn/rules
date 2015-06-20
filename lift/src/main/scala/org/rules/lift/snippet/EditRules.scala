@@ -36,7 +36,16 @@ object EditRules {
     val is = getClass().getResourceAsStream("/org/rules/lift/XMLRuleJSONSchema.json")
     val schema = scala.io.Source.fromInputStream(is).getLines().mkString("\n")
 
-    <span class="lift:embed?what=/editrules" /> ++
+    <div class="bg1" style="height: 5%;">
+      <button class="btn btn-primary btn-sm" style="margin-left: 10px; margin-top: 5px; float: left;">New</button>
+      <button data-lift="EditRules.saveButton" class="btn btn-primary btn-sm" style="margin-left: 10px; margin-top: 5px; float: left;">Save</button>
+    </div>
+    <div id="list" class="border-bg1 bg2" style="height: 30%; overflow: auto;">
+      <div data-lift="EditRules.listRules" />
+    </div>
+    <div id="detail" class="border-bg1 bg2" style="height: 65%; overflow: auto;">
+      <div id="detail-editor" style="margin-left: 10px; margin-right: 10px; margin-top: 10px;"></div>
+    </div> ++
     Script(OnLoad( Run(
       s"""
         if (typeof $$.jsonEditor != 'undefined') {
@@ -50,7 +59,7 @@ object EditRules {
             $$.jsonValues[v.id] = v;
             $$.jsonEditor.setValue(v);
             $$.jsonActiveId =  v.id;
-            $$("#detail").show();
+            $$("#detail-editor").show();
           };
 
           // it's the callback of the error getting an item from the server
@@ -65,12 +74,16 @@ object EditRules {
         JSONEditor.defaults.iconlib = 'bootstrap3';
         JSONEditor.defaults.options.disable_edit_json = true;
         JSONEditor.defaults.options.disable_properties = true;
+        JSONEditor.defaults.options.disable_collapse = true;
 
-        $$("#detail").empty();
+        $$("#detail-editor").empty();
 
-        $$("#detail").hide();
+        $$("#detail-editor").hide();
 
-        $$.jsonEditor = new JSONEditor(document.getElementById("detail"), $schema);
+        $$.jsonEditor = new JSONEditor(document.getElementById("detail-editor"), $schema);
+
+        // to hide the title of the editor
+        $$( "span:contains('hide-me')" ).parent().hide();
 
         // on change values in the editor, I update the cache
         $$.jsonEditor.on('change', function() {
@@ -84,6 +97,7 @@ object EditRules {
 
         // the id of the active item
         $$.jsonActiveId = undefined;
+        pack();
       """
     )))
   }
@@ -158,8 +172,7 @@ object EditRules {
   }
 
   def listRules (xhtml: NodeSeq): NodeSeq = {
-    <h2 style="margin-left: 10px;">Rules</h2> ++
-      Index.moduleVar.get.get.xmlModule.rules.foldLeft(NodeSeq.Empty) {(actual,rule) => actual ++ render(rule)}
+    Index.moduleVar.get.get.xmlModule.rules.foldLeft(NodeSeq.Empty) {(actual,rule) => actual ++ render(rule)}
   }
 
   /*
@@ -200,7 +213,7 @@ object EditRules {
         SHtml.jsonCall(id, new JsonContext(Full("$.jsonFromServer"), Full("$.jsonFromServerFailure")), (a:Any)=>{
           ruleToJson(getRule(id))
         })._2.toJsCmd
-        + "}"
+        + "}\npack();"
       ))
 
 
@@ -294,7 +307,7 @@ object EditRules {
     */
 
     <div data-lift="EditRules.ruleOnClick" rule-id={rule.id}>
-      <span class="btn btn-default rule" style="margin-top: 5px; margin-left: 10px;">{rule.name}</span>
+      <span class="btn btn-info rule" style="margin-top: 10px; margin-left: 10px; float: left;">{rule.name}</span>
     </div>
   }
 }

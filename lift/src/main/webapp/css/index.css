@@ -17,7 +17,7 @@
 */
 #nav {
     /*line-height: 30px;*/
-    background-color: #eeeeee;
+    background-color: #777777;
     height: 100%;
     position: fixed;
     left: 0px;
@@ -30,8 +30,8 @@
 
 #content {
     position: fixed;
-    width: 90%;
-    overflow: auto;
+    /*width: 100%;*/
+    /*overflow: auto;*/
 }
 
 #footer {
@@ -50,4 +50,17 @@
     margin-left: 10px;
     margin-right: 10px;
     margin-top: 10px;
+}
+
+.border-bg1 {
+    border-style: solid;
+    border-color: #777777;
+}
+
+.bg1 {
+    background-color: #777777;
+}
+
+.bg2 {
+    background-color: #999999;
 }

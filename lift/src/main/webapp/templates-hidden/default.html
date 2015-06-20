@@ -10,6 +10,7 @@
 
     <script type="text/javascript" src="/js/jquery-1.11.3.min.js"></script>
     <script type="text/javascript" src="/js/jsoneditor.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
     <!--script type="text/javascript" src="/js/ace.js"></script-->
 
     <script>
@@ -17,11 +18,14 @@
         //console.log('pack');
         var margin = 0;
         var height = $(this).height() - $('#header').outerHeight() - $('#footer').outerHeight() - 2 * margin;
+        var width = $(this).width() - $('#nav').outerWidth();
         var left = $('#nav').outerWidth() + margin;
         var top = $('#header').outerHeight() + margin;
         //console.log($('#nav').outerWidth(true));
         console.log('height=' + height + ', left=' + left + ', top=' + top);
+        $('#nav').height(height);
         $('#content').height(height);
+        $('#content').width(width);
         $('#content').css({'top': top + 'px'});
         $('#content').css({'left': left + 'px'});
         $('#nav').css({'top': top + 'px'});

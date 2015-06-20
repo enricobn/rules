@@ -5,8 +5,8 @@ import java.io.File
 import net.liftweb.http.{SessionVar, SHtml}
 import net.liftweb.http.SHtml._
 import net.liftweb.util.Helpers._
-import net.liftweb.http.js.JsCmd
-import net.liftweb.http.js.JsCmds.{Replace, SetHtml, CmdPair, Run}
+import net.liftweb.http.js.{JsCmds, JsCmd}
+import net.liftweb.http.js.JsCmds._
 import org.rules.rule.xml.{XMLModuleFile, XMLModule, XMLProject}
 
 import scala.xml.{NodeSeq, Text}
@@ -59,10 +59,10 @@ object Index {
   private def factoriesButtonId(module: XMLModuleFile) = "factories_button_" + module.id
 
   private def rulesButton(module: XMLModuleFile) =
-    ajaxButton("Rules", () => updateRules(module), ("class", "btn btn-default rules-nav"), ("id", rulesButtonId(module)))
+    ajaxButton("Rules", () => updateRules(module), ("class", "btn btn-primary rules-nav"), ("id", rulesButtonId(module)))
 
   private def factoriesButton(module: XMLModuleFile) =
-    ajaxButton("Factories", () => updateRules(module), ("class", "btn btn-default rules-nav"), ("id", factoriesButtonId(module)))
+    ajaxButton("Factories", () => updateRules(module), ("class", "btn btn-primary rules-nav"), ("id", factoriesButtonId(module)))
 
   private def updateNav(folder: File) : JsCmd = {
     val ifProject = XMLProject(folder)
@@ -99,7 +99,7 @@ object Index {
 
     def openProject(in: NodeSeq) : NodeSeq = {
       new File("data").listFiles().filter(_.isDirectory).foldLeft(NodeSeq.Empty) { (actual, folder) =>
-        actual ++ ajaxButton(Text(folder.getName), () => updateNav(folder)) ++ <br />
+        actual ++ ajaxButton(Text(folder.getName), () => updateNav(folder), ("class", "btn btn-primary rules-nav")) ++ <br />
       }
       //a(() => showNav, in)
     }

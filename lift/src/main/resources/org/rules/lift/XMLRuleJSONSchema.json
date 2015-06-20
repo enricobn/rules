@@ -1,7 +1,7 @@
 {"schema": {
     "type": "object",
     "format": "grid",
-    "title": "detail",
+    "title": "hide-me",
     "properties": {
       "id" : {
         "type": "string",
