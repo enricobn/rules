@@ -1,20 +1,38 @@
-<lift:surround with="default" at="main-content">
-  <div id="header"><h2>Rules</h2></div>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+    <link rel="stylesheet" type="text/css" href="css/index.css"></link>
+    <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css"></link>
+    <link rel="stylesheet" type="text/css" href="css/bootstrap-theme.min.css"></link>
 
-  <div id="nav">
-        <div class="btn btn-default rules-nav" data-lift="Index" id="new-project"></div>
-        <div class="btn btn-default rules-nav" data-lift="Index" id="open-project"></div>
-      <div id="project-menu"></div>
-  </div>
-  <!--div style="clear:both"></div-->
+    <script type="text/javascript" src="js/jquery-1.11.3.min.js"></script>
+    <script type="text/javascript" src="js/jquery.blockUI.js"></script>
+    <script type="text/javascript" src="js/jsoneditor.min.js"></script>
+    <script type="text/javascript" src="js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="js/index.js"></script>
+</head>
+<body class="lift:content_id=main">
+    <div id="main" class="lift:surround?with=default&at=main-content">
+      <div id="header"><h2>Rules</h2></div>
+      <div id="nav">
+          <div class="lift:Index.render rules-nav" id="list-projects">Projects</div>
+          <br />
+          <div class="lift:Index.render btn btn-primary rules-nav" id="add-project">+</div>
+          <div id="project-menu"></div>
+      </div>
+      <!--div style="clear:both"></div-->
 
-  <div id="content" class="bg2"></div>
+      <div id="content" class="bg2"></div>
 
-  <div id="footer">
-      <lift:msgs />
-        <lift:notice_class>noticeBox</lift:notice_class>
-      </lift:msgs>
-      <h3>(C) 2015 rules.org</h3>
-  </div>
+      <div id="footer">
+          <div class="lift:msgs noticeBox" style="left: 10px; margin-top: 18px;">
+              Notice
+            <!--lift:notice_class>noticeBox</lift:notice_class-->
+          </div>
+          <h3>(C) 2015 rules.org</h3>
+      </div>
 
-</lift:surround>
+    </div>
+</body>
+</html>

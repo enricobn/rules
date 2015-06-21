@@ -91,20 +91,20 @@ object Index {
 
   def render = {
     // build up an ajax button to show the rules in the navigation div
-    def newProject(in: NodeSeq) : NodeSeq = {
+    def addProject(in: NodeSeq) : NodeSeq = {
       Text("")
       //<button>New project</button>
       //a(() => showNav, in)
     }
 
-    def openProject(in: NodeSeq) : NodeSeq = {
+    def listProjects(in: NodeSeq) : NodeSeq = {
       new File("data").listFiles().filter(_.isDirectory).foldLeft(NodeSeq.Empty) { (actual, folder) =>
         actual ++ ajaxButton(Text(folder.getName), () => updateNav(folder), ("class", "btn btn-primary rules-nav")) ++ <br />
       }
       //a(() => showNav, in)
     }
-    // I bind the openProject method to element with id 'open-project'
-    "#open-project" #> openProject _ &
-    "#new-project" #> newProject _
+
+    "#list-projects" #> listProjects _ &
+    "#add-project" #> addProject _
   }
 }

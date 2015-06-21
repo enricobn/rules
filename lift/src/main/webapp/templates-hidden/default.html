@@ -4,41 +4,16 @@
 <head>
     <title>Rules</title>
 
-    <link rel="stylesheet" type="text/css" href="/css/index.css"></link>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"></link>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap-theme.min.css"></link>
+    <link rel="stylesheet" type="text/css" href="css/index.css"></link>
+    <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css"></link>
+    <link rel="stylesheet" type="text/css" href="css/bootstrap-theme.min.css"></link>
 
-    <script type="text/javascript" src="/js/jquery-1.11.3.min.js"></script>
-    <script type="text/javascript" src="/js/jquery.blockUI.js"></script>
-    <script type="text/javascript" src="/js/jsoneditor.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="js/jquery-1.11.3.min.js"></script>
+    <script type="text/javascript" src="js/jquery.blockUI.js"></script>
+    <script type="text/javascript" src="js/jsoneditor.min.js"></script>
+    <script type="text/javascript" src="js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="js/index.js"></script>
     <!--script type="text/javascript" src="/js/ace.js"></script-->
-
-    <script>
-    function pack() {
-        //console.log('pack');
-        var margin = 0;
-        var height = $(this).height() - $('#header').outerHeight() - $('#footer').outerHeight() - 2 * margin;
-        var width = $(this).width() - $('#nav').outerWidth();
-        var left = $('#nav').outerWidth() + margin;
-        var top = $('#header').outerHeight() + margin;
-        //console.log($('#nav').outerWidth(true));
-        console.log('height=' + height + ', left=' + left + ', top=' + top);
-        $('#nav').height(height);
-        $('#content').height(height);
-        $('#content').width(width);
-        $('#content').css({'top': top + 'px'});
-        $('#content').css({'left': left + 'px'});
-        $('#nav').css({'top': top + 'px'});
-        //console.log($('#nav'));
-    }
-
-    $(document).ready(function () {
-        $(window).resize(pack);
-        pack();
-    });
-
-    </script>
 </head>
 
 <body>
