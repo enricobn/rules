@@ -64,3 +64,9 @@
 .bg2 {
     background-color: #999999;
 }
+
+.noticeBox {
+    //position: fixed;
+    left: 10px;
+    font-size: 150%;
+}

@@ -118,7 +118,7 @@ object EditRules {
   def saveButton (node: NodeSeq): NodeSeq = {
     val cssTransform = "button [onclick]" #>
           SHtml.jsonCall(JsRaw("$.jsonValues"), new JsContext(Empty, Empty), (values: JValue)=>{
-            println(values)
+//            println(values)
             val rules = values match {
               case JObject(x :: xs) =>
                 val l = x :: xs
@@ -134,7 +134,11 @@ object EditRules {
             val updatedProject = Index.projectVar.get.get.updateModule(updatedModule)
             Index.projectVar.set(Some(updatedProject))
 
+            S.notice("Save succeded")
+
+            // TODO remove when you'll put the current module in session (and update it on save)
             Index.updateRulesButton(updatedModule)
+            //)
           })._2.toJsCmd
 
     cssTransform(node)
