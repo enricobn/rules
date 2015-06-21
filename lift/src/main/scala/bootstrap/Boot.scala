@@ -25,10 +25,11 @@ class Boot extends Loggable  {
     LiftRules.htmlProperties.default.set((r: Req) =>
       new Html5Properties(r.userAgent))
 
+    /*
     class OnError(ex: Exception) extends JsCmd {
       override def toJsCmd: String = s"showError('${ex.getMessage}', '${ex.getStackTrace.toString}')"
     }
-
+*/
     LiftRules.exceptionHandler.prepend {
       case (mode, req, ex : Exception) =>
         logger.error("Error from " + req, ex)

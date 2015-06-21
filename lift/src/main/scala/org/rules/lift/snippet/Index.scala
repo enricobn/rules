@@ -90,11 +90,10 @@ object Index {
   }
 
   def render = {
-    // build up an ajax button to show the rules in the navigation div
-    def addProject(in: NodeSeq) : NodeSeq = {
-      Text("")
-      //<button>New project</button>
-      //a(() => showNav, in)
+    def addProject() = () => {
+      println("***** add *****")
+//      JE.JsRaw("""Some JavaScript to remove <tr> from the UI""")
+      Noop
     }
 
     def listProjects(in: NodeSeq) : NodeSeq = {
@@ -105,6 +104,6 @@ object Index {
     }
 
     "#list-projects" #> listProjects _ &
-    "#add-project" #> addProject _
+    "#add-project [onClick+]" #> ajaxInvoke(addProject())
   }
 }
