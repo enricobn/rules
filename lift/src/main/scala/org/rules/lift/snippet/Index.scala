@@ -96,14 +96,20 @@ object Index {
       Noop
     }
 
+    def projects() = new File("data").listFiles().filter(_.isDirectory)
+
+    /*
     def listProjects(in: NodeSeq) : NodeSeq = {
       new File("data").listFiles().filter(_.isDirectory).foldLeft(NodeSeq.Empty) { (actual, folder) =>
         actual ++ ajaxButton(Text(folder.getName), () => updateNav(folder), ("class", "btn btn-primary rules-nav")) ++ <br />
       }
       //a(() => showNav, in)
     }
+    */
 
-    "#list-projects" #> listProjects _ &
-    "#add-project [onClick+]" #> ajaxInvoke(addProject())
+    "#list-projects *" #> projects().map(folder =>
+      "div [onClick+]" #> ajaxInvoke(() => updateNav(folder)) &
+      "div *" #> folder.getName
+    ) & "#add-project [onClick+]" #> ajaxInvoke(addProject())
   }
 }
