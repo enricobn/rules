@@ -17,7 +17,7 @@
 */
 #nav {
     /*line-height: 30px;*/
-    background-color: #777777;
+    background-color: #555555;
     height: 100%;
     position: fixed;
     left: 0px;
@@ -58,10 +58,14 @@
 }
 
 .bg1 {
-    background-color: #777777;
+    background-color: #555555;
 }
 
 .bg2 {
+    background-color: #777777;
+}
+
+.bg3 {
     background-color: #999999;
 }
 

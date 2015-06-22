@@ -36,14 +36,14 @@ object EditRules {
     val is = getClass().getResourceAsStream("/org/rules/lift/XMLRuleJSONSchema.json")
     val schema = scala.io.Source.fromInputStream(is).getLines().mkString("\n")
 
-    <div class="bg1" style="height: 5%;">
+    <div class="bg2" style="height: 5%;">
       <button class="btn btn-primary btn-sm" style="margin-left: 10px; margin-top: 5px; float: left;">New</button>
       <button data-lift="EditRules.saveButton" class="btn btn-primary btn-sm" style="margin-left: 10px; margin-top: 5px; float: left;">Save</button>
     </div>
-    <div id="list" class="border-bg1 bg2" style="height: 30%; overflow: auto;">
+    <div id="list" class="border-bg1 bg3" style="height: 30%; overflow: auto;">
       <div data-lift="EditRules.listRules" />
     </div>
-    <div id="detail" class="border-bg1 bg2" style="height: 65%; overflow: auto;">
+    <div id="detail" class="border-bg1 bg3" style="height: 65%; overflow: auto;">
       <div id="detail-editor" style="margin-left: 10px; margin-right: 10px; margin-top: 10px;"></div>
     </div> ++
     Script(OnLoad( Run(
