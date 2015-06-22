@@ -37,8 +37,11 @@ object EditRules {
     val schema = scala.io.Source.fromInputStream(is).getLines().mkString("\n")
 
     <div class="bg2" style="height: 5%;">
-      <button class="btn btn-primary btn-sm" style="margin-left: 10px; margin-top: 5px; float: left;">New</button>
-      <button data-lift="EditRules.saveButton" class="btn btn-primary btn-sm" style="margin-left: 10px; margin-top: 5px; float: left;">Save</button>
+      <button class="btn btn-primary btn-sm glyphicon glyphicon-plus" style="margin-left: 10px; margin-top: 5px; float: left;"></button>
+      <button data-lift="EditRules.saveButton"
+              class="btn btn-primary btn-sm glyphicon glyphicon-floppy-save"
+              style="margin-left: 10px; margin-top: 5px; float: left;"
+              data-toggle="tooltip" title="Save"></button>
     </div>
     <div id="list" class="border-bg1 bg3" style="height: 30%; overflow: auto;">
       <div data-lift="EditRules.listRules" />
@@ -132,12 +135,17 @@ object EditRules {
             Index.moduleVar.set(Some(updatedModule))
 
             val updatedProject = Index.projectVar.get.get.updateModule(updatedModule)
-            Index.projectVar.set(Some(updatedProject))
 
             S.notice("Save succeded")
 
+            //Index.updateProjectMenu(updatedProject)
+
+            Index.projectVar.set(Some(updatedProject))
+            Noop
+
             // TODO remove when you'll put the current module in session (and update it on save)
-            Index.updateRulesButton(updatedModule)
+            //Index.updateRulesButton(updatedModule)
+  //          Noop
             //)
           })._2.toJsCmd
 

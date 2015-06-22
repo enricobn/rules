@@ -7,6 +7,7 @@ import net.liftweb.http.SHtml._
 import net.liftweb.util.Helpers._
 import net.liftweb.http.js.{JsCmds, JsCmd}
 import net.liftweb.http.js.JsCmds._
+import org.rules.lift.CmdList
 import org.rules.rule.xml.{XMLModuleFile, XMLModule, XMLProject}
 
 import scala.xml.{NodeSeq, Text}
@@ -18,10 +19,11 @@ import scala.xml.{NodeSeq, Text}
  */
 object Index {
   object projectVar extends SessionVar[Option[XMLProject]](None)
+  // TOD better if it's only an id
   object moduleVar extends SessionVar[Option[XMLModuleFile]](None)
 
-  private def updateRules(module: XMLModuleFile) : JsCmd = {
-    moduleVar.set(Some(module))
+  def updateRules() : JsCmd = {
+    //val module = moduleVar.get.get
     //jsonEditor(module)
     CmdPair(
       SetHtml("content",
@@ -31,7 +33,7 @@ object Index {
       Run("$.ruleEditor = undefined;")
     )
   }
-
+/*
   private def updateFactories(module: XMLModule) : JsCmd = {
     SetHtml("content",
       <h2>Factories</h2> ++ module.factories.foldLeft(NodeSeq.Empty) {(actual,factory) => actual ++ Text(factory.name) ++ <br></br>}
@@ -63,7 +65,7 @@ object Index {
 
   private def factoriesButton(module: XMLModuleFile) =
     ajaxButton("Factories", () => updateRules(module), ("class", "btn btn-primary rules-nav"), ("id", factoriesButtonId(module)))
-
+*/
   private def updateNav(folder: File) : JsCmd = {
     val ifProject = XMLProject(folder)
 
@@ -75,11 +77,26 @@ object Index {
 
     projectVar.set(Some(p))
 
+    CmdList(
+      SetHtml("project-menu", <span class="lift:embed?what=/project-menu" />),
+      SetHtml("content", Text("")),
+      Run("pack();")
+    )
+
+/*    CmdPair(
+      updateProjectMenu(p),
+      SetHtml("content", Text(""))
+    )
+*/
+/*    projectVar.set(Some(p))
+
     CmdPair(
       CmdPair(
-        SetHtml("project-menu",
+        SetHtml("project-menu", <span class="lift:embed?what=/project-menu" />
+  /*
           <h2 class="rules-nav">{p.name}</h2> ++
             modules()
+*/
           //ajaxButton("Rules", () => updateRules()) ++
           //<br></br> ++
           //ajaxButton("Factories", () => updateFactories())
@@ -87,6 +104,15 @@ object Index {
         SetHtml("content", Text(""))),
       Run("pack();")
     )
+    */
+  }
+
+  def updateProjectMenu(project: XMLProject) = {
+    CmdPair(
+        SetHtml("project-menu", <span class="lift:embed?what=/project-menu" />),
+      Run("pack();")
+    )
+
   }
 
   def render = {
@@ -96,7 +122,7 @@ object Index {
       Noop
     }
 
-    def projects() = new File("data").listFiles().filter(_.isDirectory)
+    val projects = new File("data").listFiles().filter(_.isDirectory)
 
     /*
     def listProjects(in: NodeSeq) : NodeSeq = {
@@ -107,9 +133,11 @@ object Index {
     }
     */
 
-    "#list-projects *" #> projects().map(folder =>
+    "#list-projects *" #> projects.map(folder =>
       "div [onClick+]" #> ajaxInvoke(() => updateNav(folder)) &
       "div *" #> folder.getName
-    ) & "#project-menu *" #> Text("") & "#add-project [onClick+]" #> ajaxInvoke(addProject())
+    ) &
+    "#add-project [onClick+]" #> ajaxInvoke(addProject()) &
+    "#project-menu *" #> Text("")
   }
 }

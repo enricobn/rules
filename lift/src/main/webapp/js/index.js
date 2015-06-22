@@ -17,6 +17,7 @@ function pack() {
 }
 
 $(document).ready(function () {
+    $('[data-toggle="tooltip"]').tooltip();
     $(window).resize(pack);
     pack();
 });
