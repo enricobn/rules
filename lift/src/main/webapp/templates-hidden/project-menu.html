@@ -12,18 +12,17 @@
     <script type="text/javascript" src="../js/bootstrap.min.js"></script>
 </head>
 <body class="lift:content_id=real_content">
-    <div id="real_content">
-        <h3 style="margin-left: 10px; margin-right: 10px;">Modules</h3>
+    <div id="real_content" class="lift:ProjectMenu.render">
+        <h3 id="project-name" style="margin-left: 10px; margin-right: 10px;">Project name</h3>
 
-        <div class="lift:ProjectMenu.render" id="list-modules">
+        <div id="list-modules">
             <div class="btn btn-primary rules-nav">module</div>
         </div>
-        <div class="lift:ProjectMenu.render btn btn-primary btn-sm glyphicon glyphicon-plus rules-nav" id="add-module"></div>
-        <div class="lift:ProjectMenu.render">
-            <div class="btn btn-info rules-nav" id="list-rules">Rules</div>
-            <br />
-            <div class="btn btn-info rules-nav" id="list-factories">Factories</div>
-        </div>
+        <div class="btn btn-primary btn-sm glyphicon glyphicon-plus rules-nav" id="add-module"></div>
+        <br />
+        <div class="btn btn-info rules-nav" id="list-rules">Rules</div>
+        <br />
+        <div class="btn btn-info rules-nav" id="list-factories">Factories</div>
     </div>
 </body>
 </html>

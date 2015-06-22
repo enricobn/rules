@@ -134,10 +134,10 @@ object Index {
     */
 
     "#list-projects *" #> projects.map(folder =>
-      "div [onClick+]" #> ajaxInvoke(() => updateNav(folder)) &
+      "div [onClick]" #> ajaxInvoke(() => updateNav(folder)) &
       "div *" #> folder.getName
     ) &
-    "#add-project [onClick+]" #> ajaxInvoke(addProject()) &
+    "#add-project [onClick]" #> ajaxInvoke(addProject()) &
     "#project-menu *" #> Text("")
   }
 }

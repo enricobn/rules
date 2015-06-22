@@ -1,10 +1,8 @@
 package org.rules.lift.snippet
 
 import net.liftweb.http.SHtml._
-import net.liftweb.http.js.JE.JsRaw
 import net.liftweb.http.js.JsCmds._
 import net.liftweb.util.Helpers._
-import org.rules.rule.xml.XMLModuleFile
 
 import scala.xml.Text
 
@@ -21,13 +19,15 @@ object ProjectMenu {
       Run(SetHtml("content", Text("")))
     }
 
-    "#list-modules *" #> Index.projectVar.get.get.modules.map(module =>
+    val modules = Index.projectVar.get.get.modules
+
+    "#list-modules *" #> modules.map(module =>
       "div [onClick]" #> ajaxInvoke(() => updateModule(module.id)) &
-      "div *" #> module.xmlModule.name //&
-      //"div [id]" #> module.id
+      "div *" #> module.xmlModule.name
     ) &
     "#list-rules [style+]" #> "display: none;" &
     "#list-rules [onClick]" #> ajaxInvoke(() => Index.updateRules()) &
-    "#list-factories [style+]" #> "display: none;"
+    "#list-factories [style+]" #> "display: none;" &
+    "#project-name *" #> Index.projectVar.get.get.name
   }
 }
