@@ -37,11 +37,12 @@ object EditRules {
     val schema = scala.io.Source.fromInputStream(is).getLines().mkString("\n")
 
     <div class="bg2" style="height: 5%;">
-      <button class="btn btn-primary btn-sm glyphicon glyphicon-plus" style="margin-left: 10px; margin-top: 5px; float: left;"></button>
-      <button data-lift="EditRules.saveButton"
+      <h4 style="float: left;">{Index.moduleVar.get.get.xmlModule.name + " rules"}</h4>
+      <div class="btn btn-primary btn-sm glyphicon glyphicon-plus" style="margin-left: 10px; margin-top: 5px; float: left;"></div>
+      <div data-lift="EditRules.saveButton"
               class="btn btn-primary btn-sm glyphicon glyphicon-floppy-save"
               style="margin-left: 10px; margin-top: 5px; float: left;"
-              data-toggle="tooltip" title="Save"></button>
+              data-toggle="tooltip" title="Save"></div>
     </div>
     <div id="list" class="border-bg1 bg3" style="height: 30%; overflow: auto;">
       <div data-lift="EditRules.listRules" />
@@ -119,7 +120,7 @@ object EditRules {
 */
 
   def saveButton (node: NodeSeq): NodeSeq = {
-    val cssTransform = "button [onclick]" #>
+    val cssTransform = "div [onclick]" #>
           SHtml.jsonCall(JsRaw("$.jsonValues"), new JsContext(Empty, Empty), (values: JValue)=>{
 //            println(values)
             val rules = values match {
@@ -138,15 +139,8 @@ object EditRules {
 
             S.notice("Save succeded")
 
-            //Index.updateProjectMenu(updatedProject)
-
             Index.projectVar.set(Some(updatedProject))
             Noop
-
-            // TODO remove when you'll put the current module in session (and update it on save)
-            //Index.updateRulesButton(updatedModule)
-  //          Noop
-            //)
           })._2.toJsCmd
 
     cssTransform(node)

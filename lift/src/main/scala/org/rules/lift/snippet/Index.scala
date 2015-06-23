@@ -77,11 +77,9 @@ object Index {
 
     projectVar.set(Some(p))
 
-    CmdList(
-      SetHtml("project-menu", <span class="lift:embed?what=/project-menu" />),
-      SetHtml("content", Text("")),
-      Run("pack();")
-    )
+    SetHtml("project-menu", <span class="lift:embed?what=/project-menu" />) &
+    SetHtml("content", Text("")) &
+    Run("pack();")
 
 /*    CmdPair(
       updateProjectMenu(p),

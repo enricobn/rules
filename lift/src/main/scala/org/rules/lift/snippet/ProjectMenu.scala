@@ -14,20 +14,32 @@ object ProjectMenu {
     def updateModule(id: String) =
     {
       Index.moduleVar.set(Index.projectVar.get.get.modules.find(_.id == id))
-      Run("$('#list-rules').show();$('#list-factories').show()") &
+
+      val js = Index.projectVar.get.get.modules.foldLeft(""){(actual, module) =>
+        actual + {
+          if (module.id == id) {
+            s"$$('#modules-buttons-${module.id}').show();\n"
+          } else {
+            s"$$('#modules-buttons-${module.id}').hide();\n"
+          }
+        }
+      }
+
       // TODO cleanup of resources
-      Run(SetHtml("content", Text("")))
+      Run(SetHtml("content", Text(""))) &
+      Run("pack();") &
+      Run(js)
     }
 
     val modules = Index.projectVar.get.get.modules
 
     "#list-modules *" #> modules.map(module =>
-      "div [onClick]" #> ajaxInvoke(() => updateModule(module.id)) &
-      "div *" #> module.xmlModule.name
+      ".select-module [onClick]" #> ajaxInvoke(() => updateModule(module.id)) &
+      ".select-module *" #> module.xmlModule.name &
+      ".list-rules [onClick]" #> ajaxInvoke(() => Index.updateRules()) &
+      ".modules-buttons [id]" #> ("modules-buttons-" + module.id) &
+      ".modules-buttons [style+]" #> "display: none;"
     ) &
-    "#list-rules [style+]" #> "display: none;" &
-    "#list-rules [onClick]" #> ajaxInvoke(() => Index.updateRules()) &
-    "#list-factories [style+]" #> "display: none;" &
     "#project-name *" #> Index.projectVar.get.get.name
   }
 }
