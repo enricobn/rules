@@ -4,6 +4,7 @@ import java.io.File
 
 import net.liftweb.http.SHtml._
 import net.liftweb.http._
+import net.liftweb.http.js.JE.JsVar
 import net.liftweb.http.js.JsCmd
 import net.liftweb.http.js.JsCmds._
 import org.rules.lift.RulesDAO
@@ -56,13 +57,20 @@ object ProjectsList {
         */
   }
 
-  def showProjectName() = {
-    SetValById("add-project-name", "new project") &
+  def addProject() = {
+/*    SetValById("add-project-name", "new project") &
     JsShowId("add-project-name") &
     Run("pack();")
+*/
+    Run(s"""bootbox.prompt("Project name", function(result) {
+          if(result != null) {
+            ${ajaxCall(JsVar("result"), addProjectCall)};
+          }
+        });
+        """)
   }
 
-  def addProject(name: String) = {
+  def addProjectCall(name: String) = {
     if (name.isEmpty) {
       JsHideId("add-project-name") &
       Run("pack();")
@@ -87,7 +95,7 @@ object ProjectsList {
       ".select-project [onClick]" #> ajaxInvoke(() => updateProjectMenu(folder)) &
       ".select-project *" #> folder.getName &
       ".del-project [onClick]" #>
-        Run(s"""bootbox.confirm("Are you sure?", function(result) {
+        Run(s"""bootbox.confirm("Are you sure to delete project ${folder.getName}?", function(result) {
           if(result) {
             ${ajaxInvoke(() => delProject(folder))};
           }
@@ -101,8 +109,6 @@ object ProjectsList {
   def render() = {
     renderProjectsVar.set(Some(renderProjects))
     "#projects-list-container *" #> renderProjects &
-    "#add-project [onClick]" #> showProjectName &
-    "#add-project-name [style+]" #> "display: none;" &
-    "#add-project-name [onchange]" #> (onEvent(addProject))
+    "#add-project [onClick]" #> addProject()
   }
 }
