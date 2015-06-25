@@ -3,7 +3,7 @@ package org.rules.lift.snippet
 import java.io.File
 
 import net.liftweb.http.SHtml._
-import net.liftweb.http.{SessionVar, RequestVar, SHtml, Templates}
+import net.liftweb.http._
 import net.liftweb.http.js.JsCmd
 import net.liftweb.http.js.JsCmds._
 import org.rules.lift.RulesDAO
@@ -70,25 +70,37 @@ object ProjectsList {
       RulesDAO.addProject(name)
 
       JsHideId("add-project-name") &
-      SetHtml("projects-list-container  ", renderProjectsVar.is.applyAgain()) &
+      SetHtml("projects-list-container  ", renderProjectsVar.is.get.applyAgain()) &
       Run("pack();")
     }
   }
 
-  private lazy val renderProjects = SHtml.memoize {
+  def delProject(folder: File) = {
+      RulesDAO.delete(folder)
+
+      SetHtml("projects-list-container  ", renderProjectsVar.is.get.applyAgain()) &
+      Run("pack();")
+  }
+
+  private val renderProjects = SHtml.memoize {
     "#projects-list-elements *" #> RulesDAO.projects.map(folder =>
-      "div [onClick]" #> ajaxInvoke(() => updateProjectMenu(folder)) &
-      "div *" #> folder.getName
+      ".select-project [onClick]" #> ajaxInvoke(() => updateProjectMenu(folder)) &
+      ".select-project *" #> folder.getName &
+      ".del-project [onClick]" #>
+        Run(s"""bootbox.confirm("Are you sure?", function(result) {
+          if(result) {
+            ${ajaxInvoke(() => delProject(folder))};
+          }
+        });
+        """)
     )
   }
-  private object renderProjectsVar extends RequestVar(renderProjects)
+
+  private object renderProjectsVar extends RequestVar[Option[MemoizeTransform]](None)
 
   def render() = {
+    renderProjectsVar.set(Some(renderProjects))
     "#projects-list-container *" #> renderProjects &
-    /*"#projects-list-elements *" #> RulesDAO.projects.map(folder =>
-      "div [onClick]" #> ajaxInvoke(() => updateProjectMenu(folder)) &
-      "div *" #> folder.getName
-    ) &*/
     "#add-project [onClick]" #> showProjectName &
     "#add-project-name [style+]" #> "display: none;" &
     "#add-project-name [onchange]" #> (onEvent(addProject))

@@ -38,9 +38,9 @@ object EditRules {
 
     <div class="bg2" style="height: 5%;">
       <h4 style="float: left;">{Index.moduleVar.get.get.xmlModule.name + " rules"}</h4>
-      <div class="btn btn-primary btn-sm glyphicon glyphicon-plus" style="margin-left: 10px; margin-top: 5px; float: left;"></div>
+      <div class="btn btn-primary btn-xs glyphicon glyphicon-plus" style="margin-left: 10px; margin-top: 5px; float: left;"></div>
       <div data-lift="EditRules.saveButton"
-              class="btn btn-primary btn-sm glyphicon glyphicon-floppy-save"
+              class="btn btn-primary btn-xs glyphicon glyphicon-floppy-save"
               style="margin-left: 10px; margin-top: 5px; float: left;"
               data-toggle="tooltip" title="Save"></div>
     </div>

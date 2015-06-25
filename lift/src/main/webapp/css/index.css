@@ -82,3 +82,14 @@
     position: absolute;
     opacity: 1.0;
 }
+
+.ltr-margin {
+    margin-left: 10px;
+    margin-right: 10px;
+    margin-top: 10px;
+}
+
+.lt-margin {
+    margin-left: 10px;
+    margin-top: 10px;
+}

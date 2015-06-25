@@ -9,6 +9,7 @@ import scala.xml.Text
 
 /**
  * Created by enrico on 6/22/15.
+ * project-menu.html
  */
 object ProjectMenu {
   val modulesFinder = JQueryById("modules-buttons")
