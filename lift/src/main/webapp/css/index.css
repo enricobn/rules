@@ -75,3 +75,10 @@
     font-size: 150%;
     margin-top: 18px;
 }
+
+.snippeterror {
+    clear: both;
+    z-index: 2000;
+    position: absolute;
+    opacity: 1.0;
+}

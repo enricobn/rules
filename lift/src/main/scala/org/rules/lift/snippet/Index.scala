@@ -2,12 +2,14 @@ package org.rules.lift.snippet
 
 import java.io.File
 
+import net.liftweb.http.js.JE.{JsRaw, JsFunc, Call, ElemById}
 import net.liftweb.http.{SessionVar, SHtml}
 import net.liftweb.http.SHtml._
+import net.liftweb.util.CssSel
 import net.liftweb.util.Helpers._
 import net.liftweb.http.js.{JsCmds, JsCmd}
 import net.liftweb.http.js.JsCmds._
-import org.rules.lift.CmdList
+import org.rules.lift.{RulesDAO, CmdList}
 import org.rules.rule.xml.{XMLModuleFile, XMLModule, XMLProject}
 
 import scala.xml.{NodeSeq, Text}
@@ -105,22 +107,32 @@ object Index {
     */
   }
 
-  def updateProjectMenu(project: XMLProject) = {
-    CmdPair(
-        SetHtml("project-menu", <span class="lift:embed?what=/project-menu" />),
-      Run("pack();")
-    )
-
+  def updateListProjects() = {
+    SetHtml("list-projects", <span class="lift:embed?what=/list-projects" />) &
+    Run("pack();")
   }
 
-  def render = {
-    def addProject() = () => {
-      println("***** add *****")
-//      JE.JsRaw("""Some JavaScript to remove <tr> from the UI""")
-      Noop
+  def updateProjectMenu(project: XMLProject) = {
+      SetHtml("project-menu", <span class="lift:embed?what=/project-menu" />) &
+      Run("pack();"
+    )
+  }
+
+  def render() = {
+    def showProjectName() = {
+      SetValById("add-project-name", "new project") &
+      JsShowId("add-project-name") &
+      Run("pack();")
     }
 
-    val projects = new File("data").listFiles().filter(_.isDirectory)
+    def addProject(name: String) = {
+      RulesDAO.addProject(name)
+      JsHideId("add-project-name") &
+      // TODO I don't like it since if I change the template (index.html) this must be changed as well!
+      Run(s"""$$('#list-projects-container').append("<div class='btn btn-primary rules-nav'>$name</div><br/>");""") &
+      Run("pack();")
+    }
+
 
     /*
     def listProjects(in: NodeSeq) : NodeSeq = {
@@ -130,12 +142,6 @@ object Index {
       //a(() => showNav, in)
     }
     */
-
-    "#list-projects *" #> projects.map(folder =>
-      "div [onClick]" #> ajaxInvoke(() => updateNav(folder)) &
-      "div *" #> folder.getName
-    ) &
-    "#add-project [onClick]" #> ajaxInvoke(addProject()) &
     "#project-menu *" #> Text("")
   }
 }
