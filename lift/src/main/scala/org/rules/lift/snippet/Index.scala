@@ -10,7 +10,7 @@ import net.liftweb.util.Helpers._
 import net.liftweb.http.js.{JsCmds, JsCmd}
 import net.liftweb.http.js.JsCmds._
 import org.rules.lift.{RulesDAO, CmdList}
-import org.rules.rule.xml.{XMLModuleFile, XMLModule, XMLProject}
+import org.rules.rule.xml.{XMLProjectFile, XMLModuleFile, XMLModule, XMLProject}
 
 import scala.xml.{NodeSeq, Text}
 
@@ -20,7 +20,7 @@ import scala.xml.{NodeSeq, Text}
  * Created by enrico on 6/1/15.
  */
 object Index {
-  object projectVar extends SessionVar[Option[XMLProject]](None)
+  object projectVar extends SessionVar[Option[XMLProjectFile]](None)
   // TOD better if it's only an id
   object moduleVar extends SessionVar[Option[XMLModuleFile]](None)
 
@@ -69,7 +69,7 @@ object Index {
     ajaxButton("Factories", () => updateRules(module), ("class", "btn btn-primary rules-nav"), ("id", factoriesButtonId(module)))
 */
   private def updateNav(folder: File) : JsCmd = {
-    val ifProject = XMLProject(folder)
+    val ifProject = XMLProjectFile.create(folder)
 
     if (ifProject.value.isEmpty) {
       return Run("alert('Failed to load project');")

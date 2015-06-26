@@ -9,7 +9,7 @@ import net.liftweb.http.js.JsCmd
 import net.liftweb.http.js.JsCmds._
 import org.rules.lift.RulesDAO
 import net.liftweb.util.Helpers._
-import org.rules.rule.xml.XMLProject
+import org.rules.rule.xml.{XMLProjectFile, XMLProject}
 
 import scala.xml.{NodeSeq, Text}
 
@@ -19,7 +19,7 @@ import scala.xml.{NodeSeq, Text}
 object ProjectsList {
   
   private def updateProjectMenu(folder: File) : JsCmd = {
-    val ifProject = XMLProject(folder)
+    val ifProject = XMLProjectFile.create(folder)
 
     if (ifProject.value.isEmpty) {
       return Run("alert('Failed to load project');")
@@ -71,15 +71,13 @@ object ProjectsList {
   }
 
   def addProjectCall(name: String) = {
-    if (name.isEmpty) {
-      JsHideId("add-project-name") &
-      Run("pack();")
-    } else {
+    if (!name.isEmpty) {
       RulesDAO.addProject(name)
 
-      JsHideId("add-project-name") &
       SetHtml("projects-list-container  ", renderProjectsVar.is.get.applyAgain()) &
       Run("pack();")
+    } else {
+      Noop
     }
   }
 
@@ -108,6 +106,7 @@ object ProjectsList {
 
   def render() = {
     renderProjectsVar.set(Some(renderProjects))
+
     "#projects-list-container *" #> renderProjects &
     "#add-project [onClick]" #> addProject()
   }

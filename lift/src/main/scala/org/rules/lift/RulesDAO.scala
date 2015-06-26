@@ -2,6 +2,8 @@ package org.rules.lift
 
 import java.io.File
 
+import org.rules.rule.xml.{XMLProjectFile, XMLProject}
+
 /**
  * Created by enrico on 6/24/15.
  */
@@ -17,4 +19,6 @@ object RulesDAO {
       Option(file.listFiles).map(_.toList).getOrElse(Nil).foreach(delete(_))
     file.delete
   }
+
+  def addModule(project: XMLProjectFile, name: String) = project.createModule(name)
 }

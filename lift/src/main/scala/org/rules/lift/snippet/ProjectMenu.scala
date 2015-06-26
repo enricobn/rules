@@ -1,9 +1,11 @@
 package org.rules.lift.snippet
 
+import net.liftweb.http.js.JE.JsVar
+import net.liftweb.http.{MemoizeTransform, RequestVar, SHtml}
 import net.liftweb.http.SHtml._
 import net.liftweb.http.js.JsCmds._
 import net.liftweb.util.Helpers._
-import org.rules.lift.{JQueryHide, JQueryById, JQueryGroup, JsGroup}
+import org.rules.lift._
 
 import scala.xml.Text
 
@@ -15,33 +17,66 @@ object ProjectMenu {
   val modulesFinder = JQueryById("modules-buttons")
   val moduleGroup : JQueryGroup = new JQueryGroup(modulesFinder, JQueryHide)
 
-  def render = {
+  def modules = Index.projectVar.get.get.xmlModulesFiles
 
-    def updateModule(id: String) =
-    {
-      val deselect = Index.moduleVar.get match {
-        case Some(module) => moduleGroup.deSelect(module.id)
-        case _ => Noop
-      }
-      Index.moduleVar.set(Index.projectVar.get.get.modules.find(_.id == id))
+  def updateModule(id: String) = {
+    val deselect = Index.moduleVar.get match {
+      case Some(module) => moduleGroup.deSelect(module.id)
+      case _ => Noop
+    }
+    Index.moduleVar.set(modules.find(_.id == id))
 
-      // TODO cleanup of resources
-      Run(SetHtml("content", Text(""))) &
+    // TODO cleanup of resources
+    Run(SetHtml("content", Text(""))) &
       deselect &
       moduleGroup.select(id) &
       Run("pack();")
-      //Run(js)
+    //Run(js)
+  }
+
+  def addModuleCall(name: String) = {
+    if (!name.isEmpty) {
+      val newProject = RulesDAO.addModule(Index.projectVar.get.get, name)
+
+      Index.projectVar.set(Some(newProject))
+
+      SetHtml("modules-list-container", renderModulesVar.is.get.applyAgain()) &
+      Run("pack();")
+    } else {
+      Noop
     }
+  }
 
-    val modules = Index.projectVar.get.get.modules
+  def addModule() = {
+    /*    SetValById("add-project-name", "new project") &
+        JsShowId("add-project-name") &
+        Run("pack();")
+    */
+    Run(s"""bootbox.prompt("Module name", function(result) {
+          if(result != null) {
+            ${ajaxCall(JsVar("result"), addModuleCall)};
+          }
+        });
+        """)
+  }
 
-    "#list-modules *" #> modules.map(module =>
+  val renderModules = SHtml.memoize(
+    "#modules-list *" #> modules.map(module =>
       ".select-module [onClick]" #> ajaxInvoke(() => updateModule(module.id)) &
-      ".select-module *" #> module.xmlModule.name &
-      ".list-rules [onClick]" #> ajaxInvoke(() => Index.updateRules()) &
-      ".modules-buttons [id]" #> modulesFinder.getJQueryId(module.id) &
-      ".modules-buttons [style+]" #> "display: none;"
-    ) &
-    "#project-name *" #> Index.projectVar.get.get.name
+        ".select-module *" #> module.xmlModule.name &
+        ".list-rules [onClick]" #> ajaxInvoke(() => Index.updateRules()) &
+        ".modules-buttons [id]" #> modulesFinder.getJQueryId(module.id) &
+        ".modules-buttons [style+]" #> "display: none;"
+    )
+  )
+
+  private object renderModulesVar extends RequestVar[Option[MemoizeTransform]](None)
+
+  def render = {
+    renderModulesVar.set(Some(renderModules))
+
+    "#modules-list-container *" #> renderModules &
+    "#project-name *" #> Index.projectVar.get.get.name &
+    "#add-module [onClick]" #> addModule()
   }
 }

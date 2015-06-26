@@ -2,7 +2,7 @@ package org.rules.rule.example3
 
 import java.io.File
 
-import org.rules.rule.xml.{XMLRule,XMLProject}
+import org.rules.rule.xml.{XMLProjectFile, XMLRule, XMLProject}
 import org.rules.rule.xml.XMLRule._
 import org.rules.{UI, ConsoleUI}
 import org.rules.rule._
@@ -15,13 +15,13 @@ import org.scalatest.FunSuite
 class Example3Suite extends FunSuite with MockFactory {
 
   test("test") {
-    val ifProject = XMLProject(new File("core/src/test/resources/org/rules/rule/example3"))
+    val ifProject = XMLProjectFile.create(new File("core/src/test/resources/org/rules/rule/example3"))
 
     if (ifProject.value.isEmpty) {
       fail(ifProject.messages.toString())
     }
 
-    val project = ifProject.value.get
+    val project = ifProject.value.get.xmlProject
 
     val rules = project.rules
 
