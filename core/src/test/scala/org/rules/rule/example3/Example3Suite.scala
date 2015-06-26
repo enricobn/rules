@@ -15,7 +15,7 @@ import org.scalatest.FunSuite
 class Example3Suite extends FunSuite with MockFactory {
 
   test("test") {
-    val ifProject = XMLProjectFile.create(new File("core/src/test/resources/org/rules/rule/example3"))
+    val ifProject = XMLProjectFile.open(new File("core/src/test/resources/org/rules/rule/example3"))
 
     if (ifProject.value.isEmpty) {
       fail(ifProject.messages.toString())

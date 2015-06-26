@@ -69,7 +69,7 @@ object Index {
     ajaxButton("Factories", () => updateRules(module), ("class", "btn btn-primary rules-nav"), ("id", factoriesButtonId(module)))
 */
   private def updateNav(folder: File) : JsCmd = {
-    val ifProject = XMLProjectFile.create(folder)
+    val ifProject = XMLProjectFile.open(folder)
 
     if (ifProject.value.isEmpty) {
       return Run("alert('Failed to load project');")
@@ -105,6 +105,37 @@ object Index {
       Run("pack();")
     )
     */
+  }
+
+  /**
+   * TODO I don't like it
+   * it checks if the deleted project is the current one, if true it repaints project-menu and content
+   * @param name
+   */
+  def projectDeleted(name: String) = {
+    if (projectVar.get.isDefined && projectVar.get.get.name == name) {
+      projectVar.set(None)
+      SetHtml("project-menu", Text("")) &
+        SetHtml("content", Text("")) &
+        Run("pack();")
+    } else {
+      Noop
+    }
+  }
+
+  /**
+   * TODO I don't like it
+   * it checks if the deleted module is the current one, if true it repaints content
+   * @param id
+   */
+  def moduleDeleted(id: String) = {
+    if (moduleVar.get.isDefined && moduleVar.get.get.id == id) {
+      moduleVar.set(None)
+      SetHtml("content", Text("")) &
+        Run("pack();")
+    } else {
+      Noop
+    }
   }
 
   def updateListProjects() = {

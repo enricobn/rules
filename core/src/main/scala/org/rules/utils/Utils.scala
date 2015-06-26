@@ -22,4 +22,10 @@ object Utils {
     files.fold(these.filter{f => f.isFile && filter(f) })(_++_)
   }
 
+  def delete(file: File) {
+    if (file.isDirectory)
+      Option(file.listFiles).map(_.toList).getOrElse(Nil).foreach(delete(_))
+    file.delete
+  }
+
 }

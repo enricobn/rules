@@ -11,7 +11,7 @@ import org.rules.rule.xml.{XMLProjectFile, XMLProject}
 object Main {
 
   def main(args: Array[String]): Unit = {
-    val project = XMLProjectFile.create(new File((args(0))))
+    val project = XMLProjectFile.open(new File((args(0))))
     project.value match {
       case Some(p) => p.xmlProject.solver(SwingUI).run()
       case _ => println(project.messages)

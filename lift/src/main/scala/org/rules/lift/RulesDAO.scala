@@ -2,23 +2,22 @@ package org.rules.lift
 
 import java.io.File
 
-import org.rules.rule.xml.{XMLProjectFile, XMLProject}
+import org.rules.rule.xml.{XMLModuleFile, XMLProjectFile, XMLProject}
+import org.rules.utils.Utils
 
 /**
  * Created by enrico on 6/24/15.
  */
 object RulesDAO {
-  def projects = new File("data").listFiles().filter(_.isDirectory).sortWith(_.getName < _.getName)
+  private val root = new File("data")
+  def projects = root.listFiles().filter(_.isDirectory).sortWith(_.getName < _.getName)
+    .map(XMLProjectFile.open(_))
 
-  def addProject(name: String) = new File(new File("data"), name).mkdir()
+  def addProject(name: String) = new File(root, name).mkdir()
 
-  def delProject(name: String) = delete(new File(new File("data"), name))
-
-  def delete(file: File) {
-    if (file.isDirectory)
-      Option(file.listFiles).map(_.toList).getOrElse(Nil).foreach(delete(_))
-    file.delete
-  }
+  def delProject(project: XMLProjectFile) = project.delete()
 
   def addModule(project: XMLProjectFile, name: String) = project.createModule(name)
+
+  def delModule(project: XMLProjectFile, id: String) = project.delModule(id)
 }

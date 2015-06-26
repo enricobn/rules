@@ -26,6 +26,8 @@ case class XMLModuleFile(id: String, file: File) {
     }
   }
 
+  def delete() = file.delete()
+
 }
 
 object XMLModule {

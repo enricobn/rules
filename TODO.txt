@@ -1,8 +1,8 @@
 - highlight current project / Rules (or Factories) button / Rule (or Factory)
 - extract useful commented code for the future
 - refactor names with meanings, I think:
-  - Index.scala is a view (probably the only view) : MainView ?
-  - EditRules.scala is a controller: RulesController?
-  - make the model (getProjects, getRules, save etc.): MainModel?
+  - Index.scala EditRules.scala, ProjectsList.scala and Projectmenu.scala are views?
+  - put business logic in RulesDAO (rename it to RulesModel?)
   - make a state object?
 - now beans (XMLProject, XMlRule etc.) are not only beans, they contains logic (toXMl, save etc.), must I separate them?
+- check for duplicated project's, module's, rule's and factory's names on add

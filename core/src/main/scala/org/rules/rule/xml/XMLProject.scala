@@ -12,7 +12,7 @@ import org.rules.utils.Utils
  */
 
 object XMLProjectFile {
-  def create(folder: File) : Logged[XMLProjectFile] = {
+  def open(folder: File) : Logged[XMLProjectFile] = {
     val files = Utils.recursiveListFiles(folder, (f) => f.getName.endsWith(".rules.xml"))
 
     files.value match {
@@ -43,6 +43,22 @@ case class XMLProjectFile(folder: File, xmlModulesFiles: Seq[XMLModuleFile]) {
     XMLProjectFile(folder, xmlModulesFiles.+:(XMLModuleFile(UUID.randomUUID().toString, file)))
   }
 
+  def delModule(id: String) = {
+    def module = xmlModulesFiles.find(_.id == id)
+    module match {
+      case Some(m) =>
+        m.delete()
+        Some(XMLProjectFile(folder, xmlModulesFiles.filter(_.id != id)))
+      case _ => None
+    }
+/*    def file = new File(folder, name + ".rules.xml")
+    def module = XMLModule(name, Seq.empty, Seq.empty)
+    module.save(file)
+    XMLProjectFile(folder, xmlModulesFiles.+:(XMLModuleFile(UUID.randomUUID().toString, file)))
+    */
+  }
+
+  def delete() = Utils.delete(folder)
 }
 
 case class XMLProject(name: String, modules: Set[XMLModule]) {

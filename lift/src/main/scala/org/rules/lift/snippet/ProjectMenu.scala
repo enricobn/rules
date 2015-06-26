@@ -1,11 +1,12 @@
 package org.rules.lift.snippet
 
 import net.liftweb.http.js.JE.JsVar
-import net.liftweb.http.{MemoizeTransform, RequestVar, SHtml}
+import net.liftweb.http.{S, MemoizeTransform, RequestVar, SHtml}
 import net.liftweb.http.SHtml._
 import net.liftweb.http.js.JsCmds._
 import net.liftweb.util.Helpers._
 import org.rules.lift._
+import org.rules.rule.xml.{XMLModuleFile, XMLProjectFile}
 
 import scala.xml.Text
 
@@ -60,13 +61,30 @@ object ProjectMenu {
         """)
   }
 
+  def delModule(id: String) = {
+    val newProject = RulesDAO.delModule(Index.projectVar.get.get, id)
+
+    newProject match {
+      case Some(p) =>
+        Index.projectVar.set(Some(p))
+
+        SetHtml("modules-list-container  ", renderModulesVar.is.get.applyAgain()) &
+          Index.moduleDeleted(id) &
+          Run("pack();")
+      case _ => S.notice("Cannot delete module!")
+        Noop
+    }
+  }
+
   val renderModules = SHtml.memoize(
     "#modules-list *" #> modules.map(module =>
       ".select-module [onClick]" #> ajaxInvoke(() => updateModule(module.id)) &
-        ".select-module *" #> module.xmlModule.name &
-        ".list-rules [onClick]" #> ajaxInvoke(() => Index.updateRules()) &
-        ".modules-buttons [id]" #> modulesFinder.getJQueryId(module.id) &
-        ".modules-buttons [style+]" #> "display: none;"
+      ".select-module *" #> module.xmlModule.name &
+      ".list-rules [onClick]" #> ajaxInvoke(() => Index.updateRules()) &
+      ".modules-buttons [id]" #> modulesFinder.getJQueryId(module.id) &
+      ".modules-buttons [style+]" #> "display: none;" &
+      ".del-module [onClick]" #> LiftUtils.bootboxConfirm(s"Are you sure to delete module ${module.xmlModule.name}?",
+          () => delModule(module.id))
     )
   )
 
