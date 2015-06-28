@@ -11,25 +11,6 @@ import scala.xml.transform.{RuleTransformer, RewriteRule}
  * Created by enrico on 6/7/15.
  */
 
-case class XMLModuleFile(id: String, file: File) {
-  private val name = file.getName().substring(0,file.getName.length - 10)
-
-  lazy val xmlModule = XMLModule(name, XML.load(new FileInputStream(file)))
-
-  def updateAndSave(changedRules: Seq[XMLRule]) : XMLModuleFile = {
-    val updated = xmlModule.update(changedRules)
-    updated.save(file)
-
-    new XMLModuleFile(id, file) {
-      // since I don't want to reload the file!
-      override lazy val xmlModule = updated
-    }
-  }
-
-  def delete() = file.delete()
-
-}
-
 object XMLModule {
 
   def findDuplicates(rules: Seq[XMLRule]) =

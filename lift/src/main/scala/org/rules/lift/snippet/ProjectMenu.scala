@@ -6,6 +6,8 @@ import net.liftweb.http.SHtml._
 import net.liftweb.http.js.JsCmds._
 import net.liftweb.util.Helpers._
 import org.rules.lift._
+import org.rules.lift.model.RulesDAO
+import org.rules.rule.Logged
 import org.rules.rule.xml.{XMLModuleFile, XMLProjectFile}
 
 import scala.xml.Text
@@ -14,32 +16,34 @@ import scala.xml.Text
  * Created by enrico on 6/22/15.
  * project-menu.html
  */
-object ProjectMenu {
-  val modulesFinder = JQueryById("modules-buttons")
-  val moduleGroup : JQueryGroup = new JQueryGroup(modulesFinder, JQueryHide)
+object ProjectMenu extends RulesDAOProvider {
+  private val modulesFinder = JQueryById("modules-buttons")
+  private val moduleGroup : JQueryGroup = new JQueryGroup(modulesFinder, JQueryHide)
 
-  def modules = Index.projectVar.get.get.xmlModulesFiles
+  // TODO error check
+  private def modules = rulesDAO.getModules(Index.currentProjectName.get).value.get
 
-  def updateModule(id: String) = {
-    val deselect = Index.moduleVar.get match {
-      case Some(module) => moduleGroup.deSelect(module.id)
+  private def updateModule(name: String) = {
+    val deselect = Index.currentModuleName match {
+      case Some(module) => moduleGroup.deSelect(module)
       case _ => Noop
     }
-    Index.moduleVar.set(modules.find(_.id == id))
+    Index.setCurrentModuleName(name)
 
     // TODO cleanup of resources
     Run(SetHtml("content", Text(""))) &
       deselect &
-      moduleGroup.select(id) &
+      moduleGroup.select(name) &
       Run("pack();")
     //Run(js)
   }
 
-  def addModuleCall(name: String) = {
+  private def addModuleCall(name: String) = {
     if (!name.isEmpty) {
-      val newProject = RulesDAO.addModule(Index.projectVar.get.get, name)
+      // TODO check errors
+      rulesDAO.createModule(Index.currentProjectName.get, name)
 
-      Index.projectVar.set(Some(newProject))
+      //Index.projectVar.set(Some(newProject))
 
       SetHtml("modules-list-container", renderModulesVar.is.get.applyAgain()) &
       Run("pack();")
@@ -48,7 +52,7 @@ object ProjectMenu {
     }
   }
 
-  def addModule() = {
+  private def addModule() = {
     /*    SetValById("add-project-name", "new project") &
         JsShowId("add-project-name") &
         Run("pack();")
@@ -61,30 +65,30 @@ object ProjectMenu {
         """)
   }
 
-  def delModule(id: String) = {
-    val newProject = RulesDAO.delModule(Index.projectVar.get.get, id)
+  private def delModule(id: String) = {
+    val newProject = rulesDAO.delModule(Index.currentProjectName.get, id)
 
     newProject match {
-      case Some(p) =>
-        Index.projectVar.set(Some(p))
+      case Logged(Some(p), _) =>
+        //Index.projectVar.set(Some(p))
 
         SetHtml("modules-list-container  ", renderModulesVar.is.get.applyAgain()) &
           Index.moduleDeleted(id) &
           Run("pack();")
-      case _ => S.notice("Cannot delete module!")
+      case Logged(None, msgs) => S.error("Cannot delete module: " + msgs)
         Noop
     }
   }
 
-  val renderModules = SHtml.memoize(
+  private val renderModules = SHtml.memoize(
     "#modules-list *" #> modules.map(module =>
-      ".select-module [onClick]" #> ajaxInvoke(() => updateModule(module.id)) &
-      ".select-module *" #> module.xmlModule.name &
+      ".select-module [onClick]" #> ajaxInvoke(() => updateModule(module.name)) &
+      ".select-module *" #> module.name &
       ".list-rules [onClick]" #> ajaxInvoke(() => Index.updateRules()) &
-      ".modules-buttons [id]" #> modulesFinder.getJQueryId(module.id) &
+      ".modules-buttons [id]" #> modulesFinder.getJQueryId(module.name) &
       ".modules-buttons [style+]" #> "display: none;" &
-      ".del-module [onClick]" #> LiftUtils.bootboxConfirm(s"Are you sure to delete module ${module.xmlModule.name}?",
-          () => delModule(module.id))
+      ".del-module [onClick]" #> LiftUtils.bootboxConfirm(s"Are you sure to delete module ${module.name}?",
+          () => delModule(module.name))
     )
   )
 
@@ -94,7 +98,7 @@ object ProjectMenu {
     renderModulesVar.set(Some(renderModules))
 
     "#modules-list-container *" #> renderModules &
-    "#project-name *" #> Index.projectVar.get.get.name &
+    "#project-name *" #> Index.currentProjectName.get &
     "#add-module [onClick]" #> addModule()
   }
 }

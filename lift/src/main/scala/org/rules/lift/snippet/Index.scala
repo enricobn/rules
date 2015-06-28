@@ -9,7 +9,8 @@ import net.liftweb.util.CssSel
 import net.liftweb.util.Helpers._
 import net.liftweb.http.js.{JsCmds, JsCmd}
 import net.liftweb.http.js.JsCmds._
-import org.rules.lift.{RulesDAO, CmdList}
+import org.rules.lift.{RulesDAOProvider, CmdList}
+import org.rules.lift.model.RulesDAO
 import org.rules.rule.xml.{XMLProjectFile, XMLModuleFile, XMLModule, XMLProject}
 
 import scala.xml.{NodeSeq, Text}
@@ -19,10 +20,18 @@ import scala.xml.{NodeSeq, Text}
 /**
  * Created by enrico on 6/1/15.
  */
-object Index {
-  object projectVar extends SessionVar[Option[XMLProjectFile]](None)
+object Index extends RulesDAOProvider {
+  private object projectVar extends SessionVar[Option[String]](None)
   // TOD better if it's only an id
-  object moduleVar extends SessionVar[Option[XMLModuleFile]](None)
+  private object moduleVar extends SessionVar[Option[String]](None)
+
+  def currentProjectName = projectVar.get
+
+  def currentModuleName = moduleVar.get
+
+  def setCurrentProjectName(name: String) = projectVar.set(Some(name))
+
+  def setCurrentModuleName(name: String) = moduleVar.set(Some(name))
 
   def updateRules() : JsCmd = {
     //val module = moduleVar.get.get
@@ -77,7 +86,7 @@ object Index {
 
     val p = ifProject.value.get
 
-    projectVar.set(Some(p))
+    setCurrentProjectName(p.name)
 
     SetHtml("project-menu", <span class="lift:embed?what=/project-menu" />) &
     SetHtml("content", Text("")) &
@@ -126,10 +135,10 @@ object Index {
   /**
    * TODO I don't like it
    * it checks if the deleted module is the current one, if true it repaints content
-   * @param id
+   * @param name
    */
-  def moduleDeleted(id: String) = {
-    if (moduleVar.get.isDefined && moduleVar.get.get.id == id) {
+  def moduleDeleted(name: String) = {
+    if (moduleVar.get.isDefined && currentModuleName == name) {
       moduleVar.set(None)
       SetHtml("content", Text("")) &
         Run("pack();")
@@ -157,7 +166,8 @@ object Index {
     }
 
     def addProject(name: String) = {
-      RulesDAO.addProject(name)
+      rulesDAO.createProject(name)
+
       JsHideId("add-project-name") &
       // TODO I don't like it since if I change the template (index.html) this must be changed as well!
       Run(s"""$$('#list-projects-container').append("<div class='btn btn-primary rules-nav'>$name</div><br/>");""") &

@@ -5,4 +5,6 @@
   - put business logic in RulesDAO (rename it to RulesModel?)
   - make a state object?
 - now beans (XMLProject, XMlRule etc.) are not only beans, they contains logic (toXMl, save etc.), must I separate them?
-- check for duplicated project's, module's, rule's and factory's names on add
+- check for duplicated project's, module's, rule's and factory's names on add, and valid as ids (exept Rule)
+- check for names of project and module: they cannot "move" from the appropriate folder (root for project,
+  root/project.name for module)

@@ -6,13 +6,18 @@ import net.liftweb.http.{JavaScriptResponse, Html5Properties, LiftRules, Req, No
 import net.liftweb.sitemap.{Menu, SiteMap}
 import net.liftweb.common.Full
 import net.liftweb.util.Helpers._
+import org.rules.lift.RulesInjector
+import org.rules.lift.model.{RulesDAO, RulesXMLFileDAO}
 
 /**
  * A class that's instantiated early and run.  It allows the application
  * to modify lift's environment
  */
 class Boot extends Loggable  {
+
   def boot {
+    RulesInjector.registerInjection(() => RulesXMLFileDAO) (Manifest.classType(classOf[RulesDAO]))
+
     // where to search snippet
     LiftRules.addToPackages("org.rules.lift")
 

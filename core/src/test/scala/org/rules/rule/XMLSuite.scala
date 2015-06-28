@@ -15,7 +15,7 @@ class XMLSuite extends FunSuite {
     println(tmp)
     new FileOutputStream(tmp).getChannel().transferFrom(
       new FileInputStream(new File("core/src/test/resources/org/rules/rule/example3/example3.rules.xml")).getChannel, 0, Long.MaxValue )
-    val module = XMLModuleFile("1", tmp)
+    val module = XMLModuleFile(/*"1",*/ tmp)
 
     val rule =
         <rule id="2" name="Oracle" tags="dbType=repo,type=cons">
@@ -39,7 +39,7 @@ class XMLSuite extends FunSuite {
     println(tmp)
     new FileOutputStream(tmp).getChannel().transferFrom(
       new FileInputStream(new File("core/src/test/resources/org/rules/rule/example3/example3.rules.xml")).getChannel, 0, Long.MaxValue )
-    val module = XMLModuleFile("1", tmp)
+    val module = XMLModuleFile(/*"1",*/ tmp)
 
     val rule =
       <rule id="2" name="Oracle" tags="dbType=repo,type=cons">
@@ -55,7 +55,7 @@ class XMLSuite extends FunSuite {
 
     module.updateAndSave(Seq(XMLRule(rule)))
 
-    val newModule = XMLModuleFile("1", tmp).xmlModule
+    val newModule = XMLModuleFile(/*"1",*/ tmp).xmlModule
 
     val oracle = newModule.rules.find(_.id == "2").get
     assert(oracle.run.contains("\n"))
@@ -66,13 +66,13 @@ class XMLSuite extends FunSuite {
     println(tmp)
     new FileOutputStream(tmp).getChannel().transferFrom(
       new FileInputStream(new File("core/src/test/resources/org/rules/rule/example3/example3.rules.xml")).getChannel, 0, Long.MaxValue )
-    val module = XMLModuleFile("1", tmp)
+    val module = XMLModuleFile(/*"1",*/ tmp)
 
     val rule = new XMLRule("2", "Oracle", "", Seq.empty, Seq.empty, "pippo\npluto")
 
     module.updateAndSave(Seq(rule))
 
-    val newModule = XMLModuleFile("1", tmp).xmlModule
+    val newModule = XMLModuleFile(/*"1",*/ tmp).xmlModule
     val oracle = newModule.rules.find(_.id == "2").get
     assert(oracle.run.contains("\n"))
   }

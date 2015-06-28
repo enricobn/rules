@@ -9,8 +9,9 @@ import net.liftweb.http.js.JE.JsVar
 import net.liftweb.http.js.JsCmd
 import net.liftweb.http.js.JsCmds._
 import net.liftweb.util.CssSelectorParser
-import org.rules.lift.{LiftUtils, RulesDAO}
+import org.rules.lift.{RulesDAOProvider, LiftUtils}
 import net.liftweb.util.Helpers._
+import org.rules.lift.model.RulesDAO
 import org.rules.rule.Logged
 import org.rules.rule.xml.{XMLProjectFile, XMLProject}
 
@@ -19,10 +20,10 @@ import scala.xml.{NodeSeq, Text}
 /**
  * Created by enrico on 6/25/15.
  */
-object ProjectsList extends Loggable {
+object ProjectsList extends Loggable with RulesDAOProvider {
   
-  private def updateProjectMenu(folder: File) : JsCmd = {
-    val ifProject = XMLProjectFile.open(folder)
+  private def updateProjectMenu(projectName: String) : JsCmd = {
+    val ifProject = rulesDAO.getProject(projectName)
 
     if (ifProject.value.isEmpty) {
       return Run("alert('Failed to load project');")
@@ -30,7 +31,7 @@ object ProjectsList extends Loggable {
 
     val p = ifProject.value.get
 
-    Index.projectVar.set(Some(p))
+    Index.setCurrentProjectName(p.name)
 
     SetHtml("project-menu", <span class="lift:embed?what=/project-menu" />) &
     SetHtml("content", Text("")) &
@@ -77,7 +78,7 @@ object ProjectsList extends Loggable {
 
   def addProjectCall(name: String) = {
     if (!name.isEmpty) {
-      RulesDAO.addProject(name)
+      rulesDAO.createProject(name)
 
       SetHtml("projects-list-container  ", renderProjectsVar.is.get.applyAgain()) &
       Run("pack();")
@@ -86,21 +87,20 @@ object ProjectsList extends Loggable {
     }
   }
 
-  def delProject(project: XMLProjectFile) = {
-      RulesDAO.delProject(project)
+  def delProject(name: String) = {
+      rulesDAO.delProject(name)
 
       SetHtml("projects-list-container", renderProjectsVar.is.get.applyAgain()) &
-      Index.projectDeleted(project.name) &
+      Index.projectDeleted(name) &
       Run("pack();")
   }
 
   private val renderProjects = SHtml.memoize {
-    "#projects-list-elements *" #> RulesDAO.projects.collect{case Logged(Some(p), _) => p}.map{ project =>
-      val folder = project.folder
-      ".select-project [onClick]" #> ajaxInvoke(() => updateProjectMenu(folder)) &
-        ".select-project *" #> folder.getName &
-        ".del-project [onClick]" #> LiftUtils.bootboxConfirm(s"Are you sure to delete project ${folder.getName}?",
-          () => delProject(project))
+    "#projects-list-elements *" #> rulesDAO.getProjects.map{ project =>
+      ".select-project [onClick]" #> ajaxInvoke(() => updateProjectMenu(project.name)) &
+        ".select-project *" #> project.name &
+        ".del-project [onClick]" #> LiftUtils.bootboxConfirm(s"Are you sure to delete project ${project.name}?",
+          () => delProject(project.name))
       /*        Run(s"""bootbox.confirm("Are you sure to delete project ${folder.getName}?", function(result) {
               if(result) {
                 ${ajaxInvoke(() => delProject(folder))};

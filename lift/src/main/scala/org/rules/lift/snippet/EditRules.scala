@@ -7,7 +7,7 @@ package org.rules.lift.snippet
 import net.liftweb
 import net.liftweb._
 import http._
-import net.liftweb.common.{Full, Empty}
+import net.liftweb.common.{Box, Full, Empty}
 import net.liftweb.http.SHtml._
 import net.liftweb.http.js.JE.{JsObj, JsRaw}
 import net.liftweb.http.js.JsCmd
@@ -15,6 +15,8 @@ import net.liftweb.http.js.JsExp._
 import net.liftweb.http.js.JsCmds._
 import net.liftweb.json.JsonAST.JObject
 import net.liftweb.json.JsonAST.JValue
+import org.rules.lift.RulesDAOProvider
+import org.rules.rule.Logged
 import org.rules.rule.xml.{XMLProvides, XMLModule, XMLRule}
 import scala.xml.{Elem, Text, NodeSeq}
 import net.liftweb.util.BindHelpers._
@@ -25,7 +27,7 @@ import net.liftweb.json.JsonDSL._
 /**
  * A RequestVar-based snippet
  */
-object EditRules {
+object EditRules extends RulesDAOProvider {
   /*
   private object ruleVar extends RequestVar[Option[XMLRule]](None)
   private object requiresVar extends RequestVar("")
@@ -37,7 +39,7 @@ object EditRules {
     val schema = scala.io.Source.fromInputStream(is).getLines().mkString("\n")
 
     <div class="bg2" style="height: 5%;">
-      <h4 style="float: left;">{Index.moduleVar.get.get.xmlModule.name + " rules"}</h4>
+      <h4 style="float: left;">{Index.currentModuleName + " rules"}</h4>
       <div class="btn btn-primary btn-xs glyphicon glyphicon-plus" style="margin-left: 10px; margin-top: 5px; float: left;"></div>
       <div data-lift="EditRules.saveButton"
               class="btn btn-primary btn-xs glyphicon glyphicon-floppy-save"
@@ -131,15 +133,18 @@ object EditRules {
               case _ => List.empty[XMLRule]
             }
 
-            val updatedModule = Index.moduleVar.get.get.updateAndSave(rules)
+            rulesDAO.updateRuleAndSave(Index.currentProjectName.get, Index.currentModuleName.get, rules) match {
+              case Logged(Some(result), _) => S.notice("Save succeeded")
+              case Logged(None, msgs) => S.error("Save error: " + msgs)
+            }
 
-            Index.moduleVar.set(Some(updatedModule))
+            //Index.moduleVar.set(Some(updatedModule))
 
-            val updatedProject = Index.projectVar.get.get.updateModule(updatedModule)
+            //val updatedProject = Index.projectVar.get.get.updateModule(updatedModule)
 
-            S.notice("Save succeded")
+            //S.notice("Save succeded")
 
-            Index.projectVar.set(Some(updatedProject))
+            //Index.projectVar.set(Some(updatedProject))
             Noop
           })._2.toJsCmd
 
@@ -178,7 +183,9 @@ object EditRules {
   }
 
   def listRules (xhtml: NodeSeq): NodeSeq = {
-    Index.moduleVar.get.get.xmlModule.rules.foldLeft(NodeSeq.Empty) {(actual,rule) => actual ++ render(rule)}
+    // TODO there's no error check
+    rulesDAO.getRules(Index.currentProjectName.get, Index.currentModuleName.get)
+      .value.get.foldLeft(NodeSeq.Empty) {(actual,rule) => actual ++ render(rule)}
   }
 
   /*
@@ -203,7 +210,10 @@ object EditRules {
   }
 */
 
-  private def getRule(id: String) = Index.moduleVar.get.get.xmlModule.rules.find(_.id == id).get
+  private def getRule(id: String) =
+  // TODO there's no error check
+    rulesDAO.getRules(Index.currentProjectName.get, Index.currentModuleName.get)
+      .value.get.find(_.id == id).get
 
   def ruleOnClick(node: NodeSeq) : NodeSeq = {
     val id = node.head.\@("rule-id")
