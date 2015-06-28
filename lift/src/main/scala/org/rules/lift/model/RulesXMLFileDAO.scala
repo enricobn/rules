@@ -2,6 +2,7 @@ package org.rules.lift.model
 
 import java.io.File
 
+import net.liftweb.common.{Full, Failure, Box}
 import org.rules.rule.Logged
 import org.rules.rule.xml.{XMLModuleFile, XMLProjectFile, XMLRule}
 
@@ -19,44 +20,44 @@ object RulesXMLFileDAO extends RulesDAO {
   def createProject(name: String) = new File(root, name).mkdir()
 
   def delProject(name: String) =
-    findProject(name, (projectFile) => {projectFile.delete(); true})
+    findProject(name, (projectFile) => {projectFile.delete(); Full({})})
 
-  private def findProject[T](name: String, func: (XMLProjectFile) => Logged[T]) : Logged[T] =
+  private def findProject[T](name: String, func: (XMLProjectFile) => Box[T]) : Box[T] =
     fileProjects.find(_.name == name) match {
       case Some(projectFile) => func(projectFile)
-      case _ => s"""Cannot find project "$name""""
+      case _ => Failure(s"""Cannot find project "$name"""")
     }
 
   private def findModule[T](projectName: String, name: String,
-        func: (XMLProjectFile, XMLModuleFile) => Logged[T]) : Logged[T] = {
+        func: (XMLProjectFile, XMLModuleFile) => Box[T]) : Box[T] = {
     findProject[T](projectName, (projectFile) => {
       projectFile.xmlModulesFiles.find(_.name == name) match {
         case Some(moduleFile) => func(projectFile, moduleFile)
-        case _ => s"""Cannot find module "$name" in project "$projectName""""
+        case _ => Failure(s"""Cannot find module "$name" in project "$projectName"""")
       }
     })
   }
 
-  def createModule(projectName: String, name: String) : Logged[Boolean] =
-    findProject(projectName, (projectFile) => {projectFile.createModule(name); true})
+  def createModule(projectName: String, name: String) : Box[Unit] =
+    findProject(projectName, (projectFile) => {projectFile.createModule(name); Full({})})
 
-  def delModule(projectName: String, name: String) : Logged[Boolean] =
+  def delModule(projectName: String, name: String) : Box[Unit] =
     findProject(projectName, (projectFile) => {
       projectFile.delModule(name) match {
-        case Some(newProjectFile) => true
-        case _ => s"""Cannot find module "$name""""
+        case Some(newProjectFile) => Full({})
+        case _ => Failure(s"""Cannot find module "$name"""")
       }
     })
 
   def updateRuleAndSave(projectName: String, moduleName: String, rules: Seq[XMLRule]) =
-    findModule(projectName, moduleName, (projectFile, moduleFile) => {moduleFile.updateAndSave(rules); true} )
+    findModule(projectName, moduleName, (projectFile, moduleFile) => {moduleFile.updateAndSave(rules); Full({})} )
 
   def getRules(projectName: String, moduleName: String) =
-    findModule(projectName, moduleName, (projectFile, moduleFile) => {moduleFile.xmlModule.rules} )
+    findModule(projectName, moduleName, (projectFile, moduleFile) => Full(moduleFile.xmlModule.rules) )
 
   def getModules(projectName: String) =
-    findProject(projectName, (projectFile) => projectFile.xmlModulesFiles.map(_.xmlModule))
+    findProject(projectName, (projectFile) => Full(projectFile.xmlModulesFiles.map(_.xmlModule)))
 
-  def getProject(name: String) = findProject(name, (projectFile) => projectFile.xmlProject)
+  def getProject(name: String) = findProject(name, (projectFile) => Full(projectFile.xmlProject))
 
 }

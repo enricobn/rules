@@ -1,5 +1,6 @@
 package org.rules.lift.snippet
 
+import net.liftweb.common.Full
 import net.liftweb.http.js.JE.JsVar
 import net.liftweb.http.{S, MemoizeTransform, RequestVar, SHtml}
 import net.liftweb.http.SHtml._
@@ -21,7 +22,7 @@ object ProjectMenu extends RulesDAOProvider {
   private val moduleGroup : JQueryGroup = new JQueryGroup(modulesFinder, JQueryHide)
 
   // TODO error check
-  private def modules = rulesDAO.getModules(Index.currentProjectName.get).value.get
+  private def modules = rulesDAO.getModules(Index.currentProjectName.get).getOrElse(Seq.empty)
 
   private def updateModule(name: String) = {
     val deselect = Index.currentModuleName match {
@@ -66,9 +67,14 @@ object ProjectMenu extends RulesDAOProvider {
   }
 
   private def delModule(id: String) = {
-    val newProject = rulesDAO.delModule(Index.currentProjectName.get, id)
+    (for {
+      newProject <- rulesDAO.delModule(Index.currentProjectName.get, id)
+      result <- Full(SetHtml("modules-list-container  ", renderModulesVar.is.get.applyAgain()) &
+        Index.moduleDeleted(id) &
+        Run("pack();"))
+    } yield result).getOrElse(Noop)
 
-    newProject match {
+/*    newProject match {
       case Logged(Some(p), _) =>
         //Index.projectVar.set(Some(p))
 
@@ -78,6 +84,7 @@ object ProjectMenu extends RulesDAOProvider {
       case Logged(None, msgs) => S.error("Cannot delete module: " + msgs)
         Noop
     }
+    */
   }
 
   private val renderModules = SHtml.memoize(

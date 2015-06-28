@@ -23,20 +23,30 @@ import scala.xml.{NodeSeq, Text}
 object ProjectsList extends Loggable with RulesDAOProvider {
   
   private def updateProjectMenu(projectName: String) : JsCmd = {
-    val ifProject = rulesDAO.getProject(projectName)
+    LiftUtils.getOrElseError[XMLProject,JsCmd](
+      rulesDAO.getProject(projectName),
+      (project) => {
+        Index.setCurrentProjectName(project.name)
+        SetHtml("project-menu", <span class="lift:embed?what=/project-menu" />) &
+        SetHtml("content", Text("")) &
+        Run("pack();")
+      },
+      s"""Failed to load project "$projectName"""",
+      Noop)
+/*
 
-    if (ifProject.value.isEmpty) {
+    if (ifProject.isEmpty) {
       return Run("alert('Failed to load project');")
     }
 
-    val p = ifProject.value.get
+    ifProject.foreach{p =>
+      Index.setCurrentProjectName(p.name)
 
-    Index.setCurrentProjectName(p.name)
-
-    SetHtml("project-menu", <span class="lift:embed?what=/project-menu" />) &
-    SetHtml("content", Text("")) &
-    Run("pack();")
-
+      SetHtml("project-menu", <span class="lift:embed?what=/project-menu" />) &
+      SetHtml("content", Text("")) &
+      Run("pack();")
+    }
+*/
     /*    CmdPair(
           updateProjectMenu(p),
           SetHtml("content", Text(""))

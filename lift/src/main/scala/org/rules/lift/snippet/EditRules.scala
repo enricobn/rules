@@ -4,25 +4,20 @@ package org.rules.lift.snippet
  * Created by enrico on 6/5/15.
  */
 
-import net.liftweb
 import net.liftweb._
 import http._
-import net.liftweb.common.{Box, Full, Empty}
-import net.liftweb.http.SHtml._
-import net.liftweb.http.js.JE.{JsObj, JsRaw}
-import net.liftweb.http.js.JsCmd
+import net.liftweb.common.{Failure, Box, Full, Empty}
+import net.liftweb.http.js.JE.JsRaw
 import net.liftweb.http.js.JsExp._
 import net.liftweb.http.js.JsCmds._
 import net.liftweb.json.JsonAST.JObject
 import net.liftweb.json.JsonAST.JValue
-import org.rules.lift.RulesDAOProvider
-import org.rules.rule.Logged
-import org.rules.rule.xml.{XMLProvides, XMLModule, XMLRule}
-import scala.xml.{Elem, Text, NodeSeq}
-import net.liftweb.util.BindHelpers._
-import net.liftweb.json.Xml.{toJson, toXml}
+import org.rules.lift.{LiftUtils, RulesDAOProvider}
+import org.rules.rule.xml.XMLRule
+import scala.xml.NodeSeq
 import net.liftweb.json._
 import net.liftweb.json.JsonDSL._
+import net.liftweb.util.Helpers._
 
 /**
  * A RequestVar-based snippet
@@ -121,8 +116,8 @@ object EditRules extends RulesDAOProvider {
   }
 */
 
-  def saveButton (node: NodeSeq): NodeSeq = {
-    val cssTransform = "div [onclick]" #>
+  def saveButton =
+    "div [onclick]" #>
           SHtml.jsonCall(JsRaw("$.jsonValues"), new JsContext(Empty, Empty), (values: JValue)=>{
 //            println(values)
             val rules = values match {
@@ -134,8 +129,9 @@ object EditRules extends RulesDAOProvider {
             }
 
             rulesDAO.updateRuleAndSave(Index.currentProjectName.get, Index.currentModuleName.get, rules) match {
-              case Logged(Some(result), _) => S.notice("Save succeeded")
-              case Logged(None, msgs) => S.error("Save error: " + msgs)
+              case Full(result) => S.notice("Save succeeded")
+              case Failure(msg, _, _) => S.error("Save error: " + msg)
+              case _ => S.error("Save error")
             }
 
             //Index.moduleVar.set(Some(updatedModule))
@@ -148,7 +144,7 @@ object EditRules extends RulesDAOProvider {
             Noop
           })._2.toJsCmd
 
-    cssTransform(node)
+    //cssTransform(node)
     /*
     SHtml.jsonButton(Text("Save"), JsRaw("$.jsonValues"), (values : JValue) => {
       println(values)
@@ -180,13 +176,20 @@ object EditRules extends RulesDAOProvider {
       //Noop
     }, new JsonContext(Empty, Empty))
     */
-  }
+//  }
 
-  def listRules (xhtml: NodeSeq): NodeSeq = {
-    // TODO there's no error check
-    rulesDAO.getRules(Index.currentProjectName.get, Index.currentModuleName.get)
-      .value.get.foldLeft(NodeSeq.Empty) {(actual,rule) => actual ++ render(rule)}
-  }
+  def listRules (xhtml: NodeSeq): NodeSeq =
+    LiftUtils.getOrElseError[Seq[XMLRule],NodeSeq](
+      rulesDAO.getRules(Index.currentProjectName.get, Index.currentModuleName.get),
+      (rules) => rules.foldLeft(NodeSeq.Empty) {(actual,rule) => actual ++ render(rule)},
+      "Error getting rules",
+      NodeSeq.Empty)
+    /*
+    rulesDAO.getRules(Index.currentProjectName.get, Index.currentModuleName.get) match {
+      case Full(rules) => rules.foldLeft(NodeSeq.Empty) {(actual,rule) => actual ++ render(rule)}
+      case Failure(msg, _, _) => S.error("Error getting rules: " + msg); NodeSeq.Empty
+      case Empty => S.error("Error getting rules"); NodeSeq.Empty
+      */
 
   /*
   def processSave() = {
@@ -210,10 +213,21 @@ object EditRules extends RulesDAOProvider {
   }
 */
 
-  private def getRule(id: String) =
-  // TODO there's no error check
-    rulesDAO.getRules(Index.currentProjectName.get, Index.currentModuleName.get)
-      .value.get.find(_.id == id).get
+  private def getRule(id: String) : Box[XMLRule] =
+    (for {
+      rules <- rulesDAO.getRules(Index.currentProjectName.get, Index.currentModuleName.get)
+      rule <- rules.find(_.id == id) //.getOrElse(Failure(s"""Error finding rule "$id" for project "${Index.currentProjectName}""""))
+    } yield rule) ?~ s"""Error finding rule "$id" for project "${Index.currentProjectName}""""
+
+  /*  getOrElseError[Seq[XMLRule],Option[XMLRule]](
+      rulesDAO.getRules(Index.currentProjectName.get, Index.currentModuleName.get),
+      (rules) => rules.find(_.id == id),
+      "Error loading rule",
+      None
+    )
+    */
+    /*rulesDAO.getRules(Index.currentProjectName.get, Index.currentModuleName.get)
+      .value.get.find(_.id == id).get*/
 
   def ruleOnClick(node: NodeSeq) : NodeSeq = {
     val id = node.head.\@("rule-id")
@@ -226,8 +240,14 @@ object EditRules extends RulesDAOProvider {
             $$.jsonActiveId = '$id';
           } else {
         """ +
-        SHtml.jsonCall(id, new JsonContext(Full("$.jsonFromServer"), Full("$.jsonFromServerFailure")), (a:Any)=>{
-          ruleToJson(getRule(id))
+        SHtml.jsonCall(id, new JsonContext(Full("$.jsonFromServer"), Full("$.jsonFromServerFailure")), (a:Any)=> {
+          val result : Box[JValue] = for (rule <- getRule(id); json <- Full(ruleToJson(rule))) yield json
+
+          result match {
+            case Full(r) => r
+            case Failure(msg, _, _) => throw new RuntimeException(msg)
+            case _ => throw new RuntimeException()
+          }
         })._2.toJsCmd
         + "}\npack();"
       ))

@@ -2,6 +2,7 @@ package org.rules.lift.model
 
 import java.io.File
 
+import net.liftweb.common.Box
 import org.rules.rule.Logged
 import org.rules.rule.xml._
 
@@ -13,18 +14,18 @@ trait RulesDAO {
 
   def createProject(name: String) : Unit
 
-  def delProject(name: String) : Logged[Boolean]
+  def delProject(name: String) : Box[Unit]
 
-  def createModule(projectName: String, name: String) : Logged[Boolean]
+  def createModule(projectName: String, name: String) : Box[Unit]
 
-  def delModule(projectName: String, name: String) : Logged[Boolean]
+  def delModule(projectName: String, name: String) : Box[Unit]
 
-  def updateRuleAndSave(projectName: String, moduleName: String, rules: Seq[XMLRule]) : Logged[Boolean]
+  def updateRuleAndSave(projectName: String, moduleName: String, rules: Seq[XMLRule]) : Box[Unit]
 
-  def getRules(projectName: String, moduleName: String) : Logged[Seq[XMLRule]]
+  def getRules(projectName: String, moduleName: String) : Box[Seq[XMLRule]]
 
-  def getModules(projectName: String) : Logged[Seq[XMLModule]]
+  def getModules(projectName: String) : Box[Seq[XMLModule]]
 
-  def getProject(name: String) : Logged[XMLProject]
+  def getProject(name: String) : Box[XMLProject]
 
 }
