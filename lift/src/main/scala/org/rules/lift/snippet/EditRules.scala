@@ -34,7 +34,7 @@ object EditRules extends RulesDAOProvider {
     val schema = scala.io.Source.fromInputStream(is).getLines().mkString("\n")
 
     <div class="bg2" style="height: 5%;">
-      <h4 style="float: left;">{Index.currentModuleName + " rules"}</h4>
+      <h4 style="float: left;">{Index.currentModuleName.get + " rules"}</h4>
       <div class="btn btn-primary btn-xs glyphicon glyphicon-plus" style="margin-left: 10px; margin-top: 5px; float: left;"></div>
       <div data-lift="EditRules.saveButton"
               class="btn btn-primary btn-xs glyphicon glyphicon-floppy-save"

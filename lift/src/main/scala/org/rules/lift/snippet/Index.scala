@@ -33,17 +33,6 @@ object Index extends RulesDAOProvider {
 
   def setCurrentModuleName(name: String) = moduleVar.set(Some(name))
 
-  def updateRules() : JsCmd = {
-    //val module = moduleVar.get.get
-    //jsonEditor(module)
-    CmdPair(
-      SetHtml("content",
-        EditRules.embed
-        //  <h2>Rules</h2> ++ module.rules.foldLeft(NodeSeq.Empty) {(actual,rule) => actual ++ ruleForm(rule) ++ <br></br>}
-      ),
-      Run("$.ruleEditor = undefined;")
-    )
-  }
 /*
   private def updateFactories(module: XMLModule) : JsCmd = {
     SetHtml("content",
@@ -77,6 +66,7 @@ object Index extends RulesDAOProvider {
   private def factoriesButton(module: XMLModuleFile) =
     ajaxButton("Factories", () => updateRules(module), ("class", "btn btn-primary rules-nav"), ("id", factoriesButtonId(module)))
 */
+  /*
   private def updateNav(folder: File) : JsCmd = {
     val ifProject = XMLProjectFile.open(folder)
 
@@ -115,6 +105,7 @@ object Index extends RulesDAOProvider {
     )
     */
   }
+*/
 
   /**
    * TODO I don't like it
@@ -146,19 +137,20 @@ object Index extends RulesDAOProvider {
       Noop
     }
   }
-
-  def updateListProjects() = {
+/*
+  private def updateListProjects() = {
     SetHtml("list-projects", <span class="lift:embed?what=/list-projects" />) &
     Run("pack();")
   }
 
-  def updateProjectMenu(project: XMLProject) = {
+  private def updateProjectMenu(project: XMLProject) = {
       SetHtml("project-menu", <span class="lift:embed?what=/project-menu" />) &
       Run("pack();"
     )
   }
-
+*/
   def render() = {
+    /*
     def showProjectName() = {
       SetValById("add-project-name", "new project") &
       JsShowId("add-project-name") &
@@ -173,7 +165,7 @@ object Index extends RulesDAOProvider {
       Run(s"""$$('#list-projects-container').append("<div class='btn btn-primary rules-nav'>$name</div><br/>");""") &
       Run("pack();")
     }
-
+*/
 
     /*
     def listProjects(in: NodeSeq) : NodeSeq = {

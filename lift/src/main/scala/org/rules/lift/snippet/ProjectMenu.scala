@@ -2,6 +2,7 @@ package org.rules.lift.snippet
 
 import net.liftweb.common.Full
 import net.liftweb.http.js.JE.JsVar
+import net.liftweb.http.js.JsCmd
 import net.liftweb.http.{S, MemoizeTransform, RequestVar, SHtml}
 import net.liftweb.http.SHtml._
 import net.liftweb.http.js.JsCmds._
@@ -87,11 +88,24 @@ object ProjectMenu extends RulesDAOProvider {
     */
   }
 
+  private def updateRules() : JsCmd = {
+    //val module = moduleVar.get.get
+    //jsonEditor(module)
+    CmdPair(
+      SetHtml("content",
+        EditRules.embed
+        //  <h2>Rules</h2> ++ module.rules.foldLeft(NodeSeq.Empty) {(actual,rule) => actual ++ ruleForm(rule) ++ <br></br>}
+      ),
+      Run("$.ruleEditor = undefined;")
+    )
+  }
+
+
   private val renderModules = SHtml.memoize(
     "#modules-list *" #> modules.map(module =>
       ".select-module [onClick]" #> ajaxInvoke(() => updateModule(module.name)) &
       ".select-module *" #> module.name &
-      ".list-rules [onClick]" #> ajaxInvoke(() => Index.updateRules()) &
+      ".list-rules [onClick]" #> ajaxInvoke(() => updateRules()) &
       ".modules-buttons [id]" #> modulesFinder.getJQueryId(module.name) &
       ".modules-buttons [style+]" #> "display: none;" &
       ".del-module [onClick]" #> LiftUtils.bootboxConfirm(s"Are you sure to delete module ${module.name}?",
