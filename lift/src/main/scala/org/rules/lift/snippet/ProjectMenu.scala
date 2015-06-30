@@ -23,14 +23,14 @@ object ProjectMenu extends RulesDAOProvider {
   private val moduleGroup : JQueryGroup = new JQueryGroup(modulesFinder, JQueryHide)
 
   // TODO error check
-  private def modules = rulesDAO.getModules(Index.currentProjectName.get).getOrElse(Seq.empty)
+  private def modules = rulesDAO.getModules(RulesState.currentProjectName.get).getOrElse(Seq.empty)
 
   private def updateModule(name: String) = {
-    val deselect = Index.currentModuleName match {
+    val deselect = RulesState.currentModuleName match {
       case Some(module) => moduleGroup.deSelect(module)
       case _ => Noop
     }
-    Index.setCurrentModuleName(name)
+    RulesState.setCurrentModuleName(name)
 
     // TODO cleanup of resources
     Run(SetHtml("content", Text(""))) &
@@ -43,7 +43,7 @@ object ProjectMenu extends RulesDAOProvider {
   private def addModuleCall(name: String) = {
     if (!name.isEmpty) {
       // TODO check errors
-      rulesDAO.createModule(Index.currentProjectName.get, name)
+      rulesDAO.createModule(RulesState.currentProjectName.get, name)
 
       //Index.projectVar.set(Some(newProject))
 
@@ -69,28 +69,16 @@ object ProjectMenu extends RulesDAOProvider {
 
   private def delModule(id: String) = {
     (for {
-      newProject <- rulesDAO.delModule(Index.currentProjectName.get, id)
-      result <- Full(SetHtml("modules-list-container  ", renderModulesVar.is.get.applyAgain()) &
-        Index.moduleDeleted(id) &
-        Run("pack();"))
-    } yield result).getOrElse(Noop)
-
-/*    newProject match {
-      case Logged(Some(p), _) =>
-        //Index.projectVar.set(Some(p))
-
+      newProject <- rulesDAO.delModule(RulesState.currentProjectName.get, id)
+      result <- Full(
+        RulesState.moduleDeleted(id) &
         SetHtml("modules-list-container  ", renderModulesVar.is.get.applyAgain()) &
-          Index.moduleDeleted(id) &
-          Run("pack();")
-      case Logged(None, msgs) => S.error("Cannot delete module: " + msgs)
-        Noop
-    }
-    */
+        Run("pack();")
+      )
+    } yield result).getOrElse(Noop)
   }
 
   private def updateRules() : JsCmd = {
-    //val module = moduleVar.get.get
-    //jsonEditor(module)
     CmdPair(
       SetHtml("content",
         EditRules.embed
@@ -119,7 +107,7 @@ object ProjectMenu extends RulesDAOProvider {
     renderModulesVar.set(Some(renderModules))
 
     "#modules-list-container *" #> renderModules &
-    "#project-name *" #> Index.currentProjectName.get &
+    "#project-name *" #> RulesState.currentProjectName.get &
     "#add-module [onClick]" #> addModule()
   }
 }

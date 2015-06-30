@@ -34,7 +34,7 @@ object EditRules extends RulesDAOProvider {
     val schema = scala.io.Source.fromInputStream(is).getLines().mkString("\n")
 
     <div class="bg2" style="height: 5%;">
-      <h4 style="float: left;">{Index.currentModuleName.get + " rules"}</h4>
+      <h4 style="float: left;">{RulesState.currentModuleName.get + " rules"}</h4>
       <div class="btn btn-primary btn-xs glyphicon glyphicon-plus" style="margin-left: 10px; margin-top: 5px; float: left;"></div>
       <div data-lift="EditRules.saveButton"
               class="btn btn-primary btn-xs glyphicon glyphicon-floppy-save"
@@ -128,7 +128,7 @@ object EditRules extends RulesDAOProvider {
               case _ => List.empty[XMLRule]
             }
 
-            rulesDAO.updateRuleAndSave(Index.currentProjectName.get, Index.currentModuleName.get, rules) match {
+            rulesDAO.updateRuleAndSave(RulesState.currentProjectName.get, RulesState.currentModuleName.get, rules) match {
               case Full(result) => S.notice("Save succeeded")
               case Failure(msg, _, _) => S.error("Save error: " + msg)
               case _ => S.error("Save error")
@@ -180,7 +180,7 @@ object EditRules extends RulesDAOProvider {
 
   def listRules (xhtml: NodeSeq): NodeSeq =
     LiftUtils.getOrElseError[Seq[XMLRule],NodeSeq](
-      rulesDAO.getRules(Index.currentProjectName.get, Index.currentModuleName.get),
+      rulesDAO.getRules(RulesState.currentProjectName.get, RulesState.currentModuleName.get),
       (rules) => rules.foldLeft(NodeSeq.Empty) {(actual,rule) => actual ++ render(rule)},
       "Error getting rules",
       NodeSeq.Empty)
@@ -215,9 +215,9 @@ object EditRules extends RulesDAOProvider {
 
   private def getRule(id: String) : Box[XMLRule] =
     (for {
-      rules <- rulesDAO.getRules(Index.currentProjectName.get, Index.currentModuleName.get)
+      rules <- rulesDAO.getRules(RulesState.currentProjectName.get, RulesState.currentModuleName.get)
       rule <- rules.find(_.id == id) //.getOrElse(Failure(s"""Error finding rule "$id" for project "${Index.currentProjectName}""""))
-    } yield rule) ?~ s"""Error finding rule "$id" for project "${Index.currentProjectName}""""
+    } yield rule) ?~ s"""Error finding rule "$id" for project "${RulesState.currentProjectName}""""
 
   /*  getOrElseError[Seq[XMLRule],Option[XMLRule]](
       rulesDAO.getRules(Index.currentProjectName.get, Index.currentModuleName.get),

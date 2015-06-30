@@ -26,7 +26,7 @@ object ProjectsList extends Loggable with RulesDAOProvider {
     LiftUtils.getOrElseError[XMLProject,JsCmd](
       rulesDAO.getProject(projectName),
       (project) => {
-        Index.setCurrentProjectName(project.name)
+        RulesState.setCurrentProjectName(project.name)
         SetHtml("project-menu", <span class="lift:embed?what=/project-menu" />) &
         SetHtml("content", Text("")) &
         Run("pack();")
@@ -71,7 +71,7 @@ object ProjectsList extends Loggable with RulesDAOProvider {
         */
   }
 
-  def addProject() = {
+  private def addProject() = {
 /*    SetValById("add-project-name", "new project") &
     JsShowId("add-project-name") &
     Run("pack();")
@@ -86,7 +86,7 @@ object ProjectsList extends Loggable with RulesDAOProvider {
 */
   }
 
-  def addProjectCall(name: String) = {
+  private def addProjectCall(name: String) = {
     if (!name.isEmpty) {
       rulesDAO.createProject(name)
 
@@ -97,12 +97,12 @@ object ProjectsList extends Loggable with RulesDAOProvider {
     }
   }
 
-  def delProject(name: String) = {
-      rulesDAO.delProject(name)
+  private def delProject(name: String) = {
+    rulesDAO.delProject(name)
 
-      SetHtml("projects-list-container", renderProjectsVar.is.get.applyAgain()) &
-      Index.projectDeleted(name) &
-      Run("pack();")
+    RulesState.projectDeleted(name) &
+    SetHtml("projects-list-container", renderProjectsVar.is.get.applyAgain()) &
+    Run("pack();")
   }
 
   private val renderProjects = SHtml.memoize {

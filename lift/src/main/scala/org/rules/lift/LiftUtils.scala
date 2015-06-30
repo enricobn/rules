@@ -7,7 +7,7 @@ import net.liftweb.http.js.JE.JsVar
 import net.liftweb.http.js.JsCmd
 import net.liftweb.http.js.JsCmds.Run
 import org.rules.lift.snippet.EditRules._
-import org.rules.lift.snippet.Index
+import org.rules.lift.snippet.RulesState
 
 import scala.xml.NodeSeq
 
