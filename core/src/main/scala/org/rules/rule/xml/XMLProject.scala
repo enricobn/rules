@@ -16,6 +16,6 @@ case class XMLProject(name: String, modules: Set[XMLModule]) {
   val rules = modules.flatMap(_.rules)
 
   def solver(ui: UI) = new RuleSolver[String](factories.asInstanceOf[Set[RuleFactory[String]]],
-    rules.asInstanceOf[Set[Rule[String]]], ui)
+    rules.map(_.toRule()), ui)
 
 }

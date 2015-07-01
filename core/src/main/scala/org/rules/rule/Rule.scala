@@ -16,6 +16,9 @@ object Tags {
     }
     tags.split(",").map{ t =>
       val s = t.split("=")
+      if (s.length != 2) {
+        throw new IllegalArgumentException("cannot parse tags \"" + tags + "\"")
+      }
       (s(0), s(1))
     }.toSet.toMap
   }

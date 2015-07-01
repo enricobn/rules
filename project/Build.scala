@@ -11,13 +11,13 @@ object BuildSettings {
   )
 
   val bsCore = bsDefault ++ Seq(
-    name          := "rules-core"
-  , version       := "0.1-SNAPSHOT"
-  ) 
+    name          := "rules-core",
+    version       := "0.1-SNAPSHOT"
+  )
 
   val bsLift = bsDefault ++ Seq(
-    name          := "rules-lift"
-  , version       := "0.1-SNAPSHOT"
+    name          := "rules-lift",
+    version       := "0.1-SNAPSHOT"
   )
 }
 
@@ -104,6 +104,14 @@ object RulesBuild extends Build {
   , orbit
   , logback
   ) ++ liftweb
+
+
+  lazy val root = Project(id = "rules",
+    base = file("."),
+    settings = Seq(
+      mainClass in (Compile, run) := Some("org.rules.rule.Main")
+    )
+  ) aggregate(core, lift)
 
   lazy val core = Project(
     "core",
