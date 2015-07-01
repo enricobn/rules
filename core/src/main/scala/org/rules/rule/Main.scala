@@ -11,15 +11,16 @@ import org.rules.rule.xml.{XMLProjectFile, XMLProject}
 object Main {
 
   def main(args: Array[String]): Unit = {
-    if (args.isEmpty) {
+    val messages = (if (args.isEmpty) {
       val projects = new File("data").listFiles().filter(_.isDirectory).map(_.getName)
       SwingUI.choose("Projects", "choose project", projects.toList) match {
         case Some(projectName) => openProject(new File(new File("data"), projectName))
-        case _ =>
+        case _ => List(Error("No project choosed"))
       }
     } else {
-      openProject(new File(args(0)))
-    }
+      openProject(new File(new File("data"), args(0)))
+    })
+    println(messages)
   }
 
   private def openProject(file: File) =
