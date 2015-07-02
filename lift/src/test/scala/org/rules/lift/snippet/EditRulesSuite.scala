@@ -24,7 +24,10 @@ class EditRulesSuite extends FunSuite {
 
       val rule = XMLRule(xml)
 
-      val json = EditRules.ruleToJson(rule)
+      // TODO ruleToJson is in RulesList but jsonToRule is in EditRules and this is the class for testing EditRules,
+      // but I think the must all be in RulesList then the test class
+
+      val json = RulesList.ruleToJson(rule)
 
       val fromJson = EditRules.jsonToRule(json)
 

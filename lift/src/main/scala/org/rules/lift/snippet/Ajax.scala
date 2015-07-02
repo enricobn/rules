@@ -24,10 +24,11 @@ import _root_.net.liftweb.http.js.JsCmds._
 object Ajax {
 
 
-
+/*
   private def rulesToJson(rules: Seq[XMLRule]) : JValue = {
     JArray(rules.map(EditRules.ruleToJson(_)).toList)
   }
+  */
 /*
   private def jsonEditor(module: XMLModule) : JsCmd = {
     val is = getClass().getResourceAsStream("/org/rules/rule/xml/XMLRuleJSONSchema.json")

@@ -41,10 +41,10 @@ object EditRules extends RulesDAOProvider {
               style="margin-left: 10px; margin-top: 5px; float: left;"
               data-toggle="tooltip" title="Save"></div>
     </div>
-    <div id="list" class="border-bg1 bg3" style="height: 30%; overflow: auto;">
-      <div data-lift="EditRules.listRules" />
+    <div class="clear: left; border-bg1 bg3" style="height: 30%; overflow: auto">
+      <div class="lift:embed?what=/rules-list"></div>
     </div>
-    <div id="detail" class="border-bg1 bg3" style="height: 65%; overflow: auto;">
+    <div id="detail" class="border-bg1 bg3" style="height: 65%; overflow: auto; margin-bottom: 10px; clear: left;">
       <div id="detail-editor" style="margin-left: 10px; margin-right: 10px; margin-top: 10px;"></div>
     </div> ++
     Script(OnLoad( Run(
@@ -178,7 +178,8 @@ object EditRules extends RulesDAOProvider {
     */
 //  }
 
-  def listRules (xhtml: NodeSeq): NodeSeq =
+  /*
+  private def listRules (xhtml: NodeSeq): NodeSeq =
     LiftUtils.getOrElseError[Seq[XMLRule],NodeSeq](
       rulesDAO.getRules(RulesState.currentProjectName.get, RulesState.currentModuleName.get),
       (rules) => rules.foldLeft(NodeSeq.Empty) {(actual,rule) => actual ++ render(rule)},
@@ -190,7 +191,7 @@ object EditRules extends RulesDAOProvider {
       case Failure(msg, _, _) => S.error("Error getting rules: " + msg); NodeSeq.Empty
       case Empty => S.error("Error getting rules"); NodeSeq.Empty
       */
-
+*/
   /*
   def processSave() = {
     println("Save requires=" + requiresVar + " provides=" + providesVar + " run=" + runVar)
@@ -213,6 +214,7 @@ object EditRules extends RulesDAOProvider {
   }
 */
 
+  /*
   private def getRule(id: String) : Box[XMLRule] =
     (for {
       rules <- rulesDAO.getRules(RulesState.currentProjectName.get, RulesState.currentModuleName.get)
@@ -228,8 +230,10 @@ object EditRules extends RulesDAOProvider {
     */
     /*rulesDAO.getRules(Index.currentProjectName.get, Index.currentModuleName.get)
       .value.get.find(_.id == id).get*/
+*/
 
-  def ruleOnClick(node: NodeSeq) : NodeSeq = {
+/*
+  private def ruleOnClick(node: NodeSeq) : NodeSeq = {
     val id = node.head.\@("rule-id")
 
     val cssTransform = ".rule [onclick]" #>
@@ -263,7 +267,7 @@ object EditRules extends RulesDAOProvider {
       */
     cssTransform(node)
   }
-
+*/
   def jsonToRule(json: JValue) : XMLRule = {
 
     /*
@@ -306,13 +310,14 @@ object EditRules extends RulesDAOProvider {
 
     json.extract[XMLRule]
   }
-
-  def optionToString(s: Option[String]) : String =
+/*
+  private def optionToString(s: Option[String]) : String =
     s match {
       case Some(s) => s
       case _ => ""
     }
-
+    */
+/*
   def ruleToJson(rule: XMLRule) : JValue = {
     ("id" -> rule.id) ~
     ("name" -> rule.name) ~
@@ -329,7 +334,9 @@ object EditRules extends RulesDAOProvider {
     ) ~
     ("run" -> rule.run)
   }
+*/
 
+  /*
   private def render(rule: XMLRule) : NodeSeq = {
 /*    println(rule.toXML())
 
@@ -346,4 +353,5 @@ object EditRules extends RulesDAOProvider {
       <span class="btn btn-info rule" style="margin-top: 10px; margin-left: 10px; float: left;">{rule.name}</span>
     </div>
   }
+  */
 }

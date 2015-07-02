@@ -33,64 +33,17 @@ object ProjectsList extends Loggable with RulesDAOProvider {
       },
       s"""Failed to load project "$projectName"""",
       Noop)
-/*
-
-    if (ifProject.isEmpty) {
-      return Run("alert('Failed to load project');")
-    }
-
-    ifProject.foreach{p =>
-      Index.setCurrentProjectName(p.name)
-
-      SetHtml("project-menu", <span class="lift:embed?what=/project-menu" />) &
-      SetHtml("content", Text("")) &
-      Run("pack();")
-    }
-*/
-    /*    CmdPair(
-          updateProjectMenu(p),
-          SetHtml("content", Text(""))
-        )
-    */
-    /*    projectVar.set(Some(p))
-    
-        CmdPair(
-          CmdPair(
-            SetHtml("project-menu", <span class="lift:embed?what=/project-menu" />
-      /*
-              <h2 class="rules-nav">{p.name}</h2> ++
-                modules()
-    */
-              //ajaxButton("Rules", () => updateRules()) ++
-              //<br></br> ++
-              //ajaxButton("Factories", () => updateFactories())
-            ),
-            SetHtml("content", Text(""))),
-          Run("pack();")
-        )
-        */
   }
 
   private def addProject() = {
-/*    SetValById("add-project-name", "new project") &
-    JsShowId("add-project-name") &
-    Run("pack();")
-*/
-    LiftUtils.bootboxPrompt("Project name", addProjectCall)
-/*    Run(s"""bootbox.prompt("Project name", function(result) {
-          if(result != null) {
-            ${ajaxCall(JsVar("result"), addProjectCall)};
-          }
-        });
-        """)
-*/
+    LiftUtils.bootboxPrompt("Project name", addProjectByName)
   }
 
-  private def addProjectCall(name: String) = {
+  private def addProjectByName(name: String) = {
     if (!name.isEmpty) {
       rulesDAO.createProject(name)
 
-      SetHtml("projects-list-container  ", renderProjectsVar.is.get.applyAgain()) &
+      SetHtml("projects-list-container", renderProjectsVar.is.get.applyAgain()) &
       Run("pack();")
     } else {
       Noop
@@ -111,13 +64,6 @@ object ProjectsList extends Loggable with RulesDAOProvider {
         ".select-project *" #> project.name &
         ".del-project [onClick]" #> LiftUtils.bootboxConfirm(s"Are you sure to delete project ${project.name}?",
           () => delProject(project.name))
-      /*        Run(s"""bootbox.confirm("Are you sure to delete project ${folder.getName}?", function(result) {
-              if(result) {
-                ${ajaxInvoke(() => delProject(folder))};
-              }
-            });
-            """)
-    */
     }
   }
 
