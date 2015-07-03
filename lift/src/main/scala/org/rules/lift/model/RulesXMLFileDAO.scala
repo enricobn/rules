@@ -1,6 +1,7 @@
 package org.rules.lift.model
 
 import java.io.File
+import java.util.UUID
 
 import net.liftweb.common.{Full, Failure, Box}
 import org.rules.rule.Logged
@@ -59,5 +60,13 @@ object RulesXMLFileDAO extends RulesDAO {
     findProject(projectName, (projectFile) => Full(projectFile.xmlModulesFiles.map(_.xmlModule)))
 
   def getProject(name: String) = findProject(name, (projectFile) => Full(projectFile.xmlProject))
+
+  def createRule(projectName: String, moduleName: String, name: String) =
+    findModule(projectName, moduleName, (projectFile, moduleFile) => {
+      val rule = XMLRule(UUID.randomUUID().toString, name, "", Seq.empty, Seq.empty, "")
+      moduleFile.updateAndSave(Seq(rule))
+      Full(rule)
+    }
+  )
 
 }

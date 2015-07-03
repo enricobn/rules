@@ -13,11 +13,16 @@ import scala.xml.transform.{RuleTransformer, RewriteRule}
 
 object XMLModule {
 
-  def findDuplicates(rules: Seq[XMLRule]) =
+  def findDuplicates(rules: Seq[XMLRule]) = {
     rules.groupBy(_.id).find(_._2.size > 1) match {
       case Some(x) => throw new IllegalStateException("duplicated id=" + x._2.head.id)
       case _ =>
     }
+    rules.groupBy(_.name).find(_._2.size > 1) match {
+      case Some(x) => throw new IllegalStateException("duplicated name=" + x._2.head.name)
+      case _ =>
+    }
+  }
 
   def apply(name: String, xml: NodeSeq) : XMLModule = {
     val rules = (xml \ "rule").map(XMLRule(_))
@@ -65,9 +70,13 @@ case class XMLModule(name: String, rules: Seq[XMLRule], factories: Seq[XMLRuleFa
       }
     }
 
-    val addedRules = changedRules.filter{ rule => !rules.exists(_.id == rule.id)}
+    val addedRules = changedRules.filter{ rule => !rules.exists(_.id == rule.id) }
 
-    XMLModule(name, updatedRules ++ addedRules, factories)
+    val totalRules = updatedRules ++ addedRules
+
+    XMLModule.findDuplicates(totalRules)
+
+    XMLModule(name, totalRules, factories)
 
     /*
     // TODO add not existent module

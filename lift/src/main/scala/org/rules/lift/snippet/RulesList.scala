@@ -10,6 +10,7 @@ import net.liftweb.json.JsonAST._
 import net.liftweb.json.JsonDSL._
 import net.liftweb.util.Helpers._
 import org.rules.lift._
+import org.rules.lift.snippet.ProjectsList._
 import org.rules.rule.xml.{XMLRule, XMLProject}
 
 import scala.xml.Text
@@ -101,13 +102,37 @@ object RulesList extends Loggable with RulesDAOProvider {
 
   private object renderRulesVar extends RequestVar[Option[MemoizeTransform]](None)
 
+  private def addRule() = {
+    LiftUtils.bootboxPrompt("Rule name", addRuleByName)
+  }
+
+  private def addRuleByName(name: String) = {
+    if (!name.isEmpty) {
+      val rule = rulesDAO.createRule(RulesState.currentProjectName.get, RulesState.currentModuleName.get, name)
+      LiftUtils.getOrElseError[XMLRule, JsCmd](
+        rule,
+        (r) => SetHtml("rules-list-container", renderRulesVar.is.get.applyAgain()) &
+          updateRule(r),
+        s"""Cannot create rule "$name"""",
+        Noop
+      )
+/*      rule match {
+        case Full(r) => SetHtml("rules-list-container", renderRulesVar.is.get.applyAgain()) &
+          updateRule(r)
+        case _ => S.error(s"""Cannot create rule "$name"""")
+          Noop
+      }
+*/
+    } else {
+      Noop
+    }
+  }
   def render() = {
     RulesState.resetCurrentRuleId
     renderRulesVar.set(Some(renderRules))
 
     "#rules-list-container *" #> renderRules &
-    "#rules-list-title *" #> (RulesState.currentModuleName.get + " rules")
-    /* &
-    "#add-project [onClick]" #> addProject()*/
+    "#rules-list-title *" #> (RulesState.currentModuleName.get + " rules") &
+    "#add-rule [onClick]" #> addRule()
   }
 }
