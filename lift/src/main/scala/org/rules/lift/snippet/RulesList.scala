@@ -94,7 +94,9 @@ object RulesList extends Loggable with RulesDAOProvider {
   def render() = {
     renderProjectsVar.set(Some(renderRules))
 
-    "#rules-list-container *" #> renderRules/* &
+    "#rules-list-container *" #> renderRules &
+    "#rules-list-title *" #> (RulesState.currentModuleName.get + " rules")
+    /* &
     "#add-project [onClick]" #> addProject()*/
   }
 }

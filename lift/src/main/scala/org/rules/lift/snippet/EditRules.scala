@@ -33,20 +33,7 @@ object EditRules extends RulesDAOProvider {
     val is = getClass().getResourceAsStream("/org/rules/lift/XMLRuleJSONSchema.json")
     val schema = scala.io.Source.fromInputStream(is).getLines().mkString("\n")
 
-    <div class="bg2" style="height: 5%;">
-      <h4 style="float: left;">{RulesState.currentModuleName.get + " rules"}</h4>
-      <div class="btn btn-primary btn-xs glyphicon glyphicon-plus" style="margin-left: 10px; margin-top: 5px; float: left;"></div>
-      <div data-lift="EditRules.saveButton"
-              class="btn btn-primary btn-xs glyphicon glyphicon-floppy-save"
-              style="margin-left: 10px; margin-top: 5px; float: left;"
-              data-toggle="tooltip" title="Save"></div>
-    </div>
-    <div class="clear: left; border-bg1 bg3" style="height: 30%; overflow: auto">
-      <div class="lift:embed?what=/rules-list"></div>
-    </div>
-    <div id="detail" class="border-bg1 bg3" style="height: 65%; overflow: auto; margin-bottom: 10px; clear: left;">
-      <div id="detail-editor" style="margin-left: 10px; margin-right: 10px; margin-top: 10px;"></div>
-    </div> ++
+    <div class="lift:embed?what=/rules-list"></div> ++
     Script(OnLoad( Run(
       s"""
         if (typeof $$.jsonEditor != 'undefined') {
