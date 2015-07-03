@@ -54,10 +54,10 @@ object RulesXMLFileDAO extends RulesDAO {
     findModule(projectName, moduleName, (projectFile, moduleFile) => {moduleFile.updateAndSave(rules); Full({})} )
 
   def getRules(projectName: String, moduleName: String) =
-    findModule(projectName, moduleName, (projectFile, moduleFile) => Full(moduleFile.xmlModule.rules) )
+    findModule(projectName, moduleName, (projectFile, moduleFile) => Full(moduleFile.xmlModule.rules.sortWith(_.name < _.name)) )
 
   def getModules(projectName: String) =
-    findProject(projectName, (projectFile) => Full(projectFile.xmlModulesFiles.map(_.xmlModule)))
+    findProject(projectName, (projectFile) => Full(projectFile.xmlModulesFiles.map(_.xmlModule).sortWith(_.name < _.name)))
 
   def getProject(name: String) = findProject(name, (projectFile) => Full(projectFile.xmlProject))
 
