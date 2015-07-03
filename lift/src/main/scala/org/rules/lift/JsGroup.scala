@@ -75,3 +75,8 @@ object JQueryHide extends JQueryApplier {
   def applySelect(e: JsExp) : JsCmd = (e ~> JsFunc("show")).cmd
   def applyDeSelect(e: JsExp) : JsCmd = (e ~> JsFunc("hide")).cmd
 }
+
+object JQueryActivate extends JQueryApplier {
+  def applySelect(e: JsExp) : JsCmd = (e ~> JsFunc("addClass", "active")).cmd
+  def applyDeSelect(e: JsExp) : JsCmd = (e ~> JsFunc("removeClass", "active")).cmd
+}

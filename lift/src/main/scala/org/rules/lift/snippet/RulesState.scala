@@ -12,16 +12,22 @@ import scala.xml.Text
  */
 object RulesState extends RulesDAOProvider {
   private object projectVar extends SessionVar[Option[String]](None)
-  // TOD better if it's only an id
   private object moduleVar extends SessionVar[Option[String]](None)
+  private object ruleVar extends SessionVar[Option[String]](None)
 
   def currentProjectName = projectVar.get
 
   def currentModuleName = moduleVar.get
 
+  def currentRuleId = ruleVar.get
+
   def setCurrentProjectName(name: String) = projectVar.set(Some(name))
 
   def setCurrentModuleName(name: String) = moduleVar.set(Some(name))
+
+  def setCurrentRuleId(id: String) = ruleVar.set(Some(id))
+
+  def resetCurrentRuleId = ruleVar.set(None)
 
   /**
    * TODO I don't like it
