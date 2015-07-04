@@ -46,8 +46,8 @@ object RulesList extends Loggable with RulesDAOProvider {
   private def updateRule(rule: XMLRule): JsCmd = {
     val result = JsRaw(
       s"""
-            if (typeof $$.jsonValues['${rule.id}'] != 'undefined') {
-              $$.jsonEditor.setValue($$.jsonValues['${rule.id}']);
+            if (typeof $$.changedRules.jsonValues['${rule.id}'] != 'undefined') {
+              $$.jsonEditor.setValue($$.changedRules.jsonValues['${rule.id}']);
               $$.jsonActiveId = '${rule.id}';
             } else {
           """ +
@@ -97,18 +97,34 @@ object RulesList extends Loggable with RulesDAOProvider {
     }
   }
 
+  private def delRule =
+    Run(
+        s"""
+           if (typeof $$.jsonActiveId != 'undefined') {
+              $$('#${rulesFinder.idPrefix}' + '-' + $$.jsonActiveId).hide();
+              $$.changedRules.deleted.push($$.jsonActiveId);
+              $$("#detail-editor").hide();
+              $$.jsonActiveId = undefined;
+            }
+        """)
+
   private def save =
-    SHtml.jsonCall(JsRaw("$.jsonValues"), new JsContext(Empty, Empty), (values: JValue)=>{
+    SHtml.jsonCall(JsRaw("$.changedRules"), new JsContext(Empty, Empty), (changedRules: JValue)=>{
       //            println(values)
-      val rules = values match {
+      val rules = changedRules \ "jsonValues" match {
         case JObject(x :: xs) =>
           val l = x :: xs
           l.foldLeft(List.empty[XMLRule]){ (actual, field) => actual.:+(jsonToRule(field.value))}
-        //l.foreach{ field => println("##### Saved " + jsonToRule(field))}
         case _ => List.empty[XMLRule]
       }
 
-      rulesDAO.updateRuleAndSave(RulesState.currentProjectName.get, RulesState.currentModuleName.get, rules) match {
+      val deletedRules = changedRules \ "deleted" match {
+        case JArray(l: List[JString]) =>
+          l.foldLeft(List.empty[String]){ (actual, field) => actual.:+(field.s)}
+        case _ => List.empty[String]
+      }
+
+      rulesDAO.updateRulesAndSave(RulesState.currentProjectName.get, RulesState.currentModuleName.get, rules, deletedRules) match {
         case Full(result) => S.notice("Save succeeded")
         case Failure(msg, _, _) => S.error("Save error: " + msg)
         case _ => S.error("Save error")
@@ -123,6 +139,7 @@ object RulesList extends Loggable with RulesDAOProvider {
     "#rules-list-container *" #> renderRules &
     "#rules-list-title *" #> (RulesState.currentModuleName.get + " rules") &
     "#add-rule [onClick]" #> addRule &
+    "#del-rule [onClick]" #> delRule &
     "#rules-save [onclick]" #> save
   }
 }

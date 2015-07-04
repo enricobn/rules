@@ -20,7 +20,7 @@ trait RulesDAO {
 
   def delModule(projectName: String, name: String) : Box[Unit]
 
-  def updateRuleAndSave(projectName: String, moduleName: String, rules: Seq[XMLRule]) : Box[Unit]
+  def updateRulesAndSave(projectName: String, moduleName: String, rules: Seq[XMLRule], deletedRulesIds: Seq[String]) : Box[Unit]
 
   def getRules(projectName: String, moduleName: String) : Box[Seq[XMLRule]]
 

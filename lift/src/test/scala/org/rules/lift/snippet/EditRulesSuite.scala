@@ -29,7 +29,7 @@ class EditRulesSuite extends FunSuite {
 
       val json = RulesList.ruleToJson(rule)
 
-      val fromJson = EditRules.jsonToRule(json)
+      val fromJson = RulesList.jsonToRule(json)
 
       assert(rule == fromJson)
     }

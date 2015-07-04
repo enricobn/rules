@@ -60,7 +60,7 @@ case class XMLModule(name: String, rules: Seq[XMLRule], factories: Seq[XMLRuleFa
    * @param changedRules to replace
    * @return
    */
-  def update(changedRules: Seq[XMLRule]) : XMLModule = {
+  def update(changedRules: Seq[XMLRule], deletedRulesIds: Seq[String]) : XMLModule = {
 
     val updatedRules = rules.map{ rule =>
       if (changedRules.exists(_.id == rule.id)) {
@@ -72,7 +72,7 @@ case class XMLModule(name: String, rules: Seq[XMLRule], factories: Seq[XMLRuleFa
 
     val addedRules = changedRules.filter{ rule => !rules.exists(_.id == rule.id) }
 
-    val totalRules = updatedRules ++ addedRules
+    val totalRules = (updatedRules ++ addedRules).filter{ rule => !deletedRulesIds.contains(rule.id) }
 
     XMLModule.findDuplicates(totalRules)
 

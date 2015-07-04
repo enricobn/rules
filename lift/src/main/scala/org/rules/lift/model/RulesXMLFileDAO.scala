@@ -50,8 +50,8 @@ object RulesXMLFileDAO extends RulesDAO {
       }
     })
 
-  def updateRuleAndSave(projectName: String, moduleName: String, rules: Seq[XMLRule]) =
-    findModule(projectName, moduleName, (projectFile, moduleFile) => {moduleFile.updateAndSave(rules); Full({})} )
+  def updateRulesAndSave(projectName: String, moduleName: String, changedRules: Seq[XMLRule], deletedRulesIds: Seq[String]) =
+    findModule(projectName, moduleName, (projectFile, moduleFile) => {moduleFile.updateAndSave(changedRules, deletedRulesIds); Full({})} )
 
   def getRules(projectName: String, moduleName: String) =
     findModule(projectName, moduleName, (projectFile, moduleFile) => Full(moduleFile.xmlModule.rules.sortWith(_.name < _.name)) )
@@ -64,9 +64,8 @@ object RulesXMLFileDAO extends RulesDAO {
   def createRule(projectName: String, moduleName: String, name: String) =
     findModule(projectName, moduleName, (projectFile, moduleFile) => {
       val rule = XMLRule(UUID.randomUUID().toString, name, "", Seq.empty, Seq.empty, "")
-      moduleFile.updateAndSave(Seq(rule))
+      moduleFile.updateAndSave(Seq(rule), Seq.empty)
       Full(rule)
-    }
-  )
+    })
 
 }

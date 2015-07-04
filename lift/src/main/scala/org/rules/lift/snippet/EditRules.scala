@@ -44,7 +44,7 @@ object EditRules extends RulesDAOProvider {
           // it's the callback of getting an item from the server, v is the Json value
           $$.jsonFromServer = function(v) {
             console.log('got json from server');
-            $$.jsonValues[v.id] = v;
+            $$.changedRules.jsonValues[v.id] = v;
             $$.jsonEditor.setValue(v);
             $$.jsonActiveId =  v.id;
             $$("#detail-editor").show();
@@ -76,13 +76,15 @@ object EditRules extends RulesDAOProvider {
         // on change values in the editor, I update the cache
         $$.jsonEditor.on('change', function() {
           if (typeof $$.jsonActiveId != 'undefined') {
-            $$.jsonValues[$$.jsonActiveId] = $$.jsonEditor.getValue();
+            $$.changedRules.jsonValues[$$.jsonActiveId] = $$.jsonEditor.getValue();
           }
         });
+        $$.changedRules = new Object();
 
         // the cache of items, key=id value=json
-        $$.jsonValues = new Object();
-
+        $$.changedRules.jsonValues = new Object();
+        // deleted rules ids
+        $$.changedRules.deleted = new Array();
         // the id of the active item
         $$.jsonActiveId = undefined;
         pack();

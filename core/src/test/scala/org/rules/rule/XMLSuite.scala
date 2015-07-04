@@ -29,7 +29,7 @@ class XMLSuite extends FunSuite {
 
         </rule>
 
-    val newModule = module.updateAndSave(Seq(XMLRule(rule))).xmlModule
+    val newModule = module.updateAndSave(Seq(XMLRule(rule)), Seq.empty).xmlModule
     val oracle = newModule.rules.find(_.id == "2").get
     assert(oracle.requires.head.token == "test")
   }
@@ -53,7 +53,7 @@ class XMLSuite extends FunSuite {
 
       </rule>
 
-    module.updateAndSave(Seq(XMLRule(rule)))
+    module.updateAndSave(Seq(XMLRule(rule)), Seq.empty)
 
     val newModule = XMLModuleFile(/*"1",*/ tmp).xmlModule
 
@@ -70,7 +70,7 @@ class XMLSuite extends FunSuite {
 
     val rule = new XMLRule("2", "Oracle", "", Seq.empty, Seq.empty, "pippo\npluto")
 
-    module.updateAndSave(Seq(rule))
+    module.updateAndSave(Seq(rule), Seq.empty)
 
     val newModule = XMLModuleFile(/*"1",*/ tmp).xmlModule
     val oracle = newModule.rules.find(_.id == "2").get
@@ -93,7 +93,7 @@ class XMLSuite extends FunSuite {
 
       </rule>
 
-    val newModule = module.update(Seq(XMLRule(rule)))
+    val newModule = module.update(Seq(XMLRule(rule)), Seq.empty)
     val oracle = newModule.rules.find(_.id == "2").get
     assert(oracle.requires.head.token == "test")
   }
@@ -112,7 +112,7 @@ class XMLSuite extends FunSuite {
         </rule>
       </rules>)
 
-    val newModule = module.update(Seq.empty[XMLRule])
+    val newModule = module.update(Seq.empty[XMLRule], Seq.empty)
     val oracle = newModule.rules.find(_.id == "2").get
     assert(oracle.requires.head.token == "test")
   }

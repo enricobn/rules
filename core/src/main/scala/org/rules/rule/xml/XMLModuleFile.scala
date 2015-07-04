@@ -12,8 +12,8 @@ case class XMLModuleFile(/*id: String, */file: File) {
 
    lazy val xmlModule = XMLModule(name, XML.load(new FileInputStream(file)))
 
-   def updateAndSave(changedRules: Seq[XMLRule]) : XMLModuleFile = {
-     val updated = xmlModule.update(changedRules)
+   def updateAndSave(changedRules: Seq[XMLRule], deletedRulesIds: Seq[String]) : XMLModuleFile = {
+     val updated = xmlModule.update(changedRules, deletedRulesIds)
      updated.save(file)
 
      new XMLModuleFile(/*id,*/ file) {
