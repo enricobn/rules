@@ -1,11 +1,12 @@
 package org.rules.lift.snippet
 
-import net.liftweb.common.{Box, Full, Failure, Loggable}
+import net.liftweb.common._
 import net.liftweb.http.SHtml._
 import net.liftweb.http._
 import net.liftweb.http.js.JE.JsRaw
 import net.liftweb.http.js.JsCmd
 import net.liftweb.http.js.JsCmds._
+import net.liftweb.json.DefaultFormats
 import net.liftweb.json.JsonAST._
 import net.liftweb.json.JsonDSL._
 import net.liftweb.util.Helpers._
@@ -37,6 +38,11 @@ object RulesList extends Loggable with RulesDAOProvider {
       ("run" -> rule.run)
   }
 
+  def jsonToRule(json: JValue) : XMLRule = {
+    implicit val formats = DefaultFormats
+    json.extract[XMLRule]
+  }
+
   private def updateRule(rule: XMLRule): JsCmd = {
     val result = JsRaw(
       s"""
@@ -60,34 +66,6 @@ object RulesList extends Loggable with RulesDAOProvider {
 
     result
   }
-  /*    LiftUtils.getOrElseError[XMLProject,JsCmd](
-        rulesDAO.getProject(projectName),
-        (project) => {
-          RulesState.setCurrentProjectName(project.name)
-          SetHtml("project-menu", <span class="lift:embed?what=/project-menu" />) &
-          SetHtml("content", Text("")) &
-          Run("pack();")
-        },
-        s"""Failed to load project "$projectName"""",
-        Noop)
-        */
-
-/*
-  private def addProject() = {
-    LiftUtils.bootboxPrompt("Project name", addProject)
-  }
-
-  private def addProject(name: String) = {
-    if (!name.isEmpty) {
-      rulesDAO.createProject(name)
-
-      SetHtml("projects-list-container", renderProjectsVar.is.get.applyAgain()) &
-      Run("pack();")
-    } else {
-      Noop
-    }
-  }
-*/
 
   private val renderRules = SHtml.memoize {
     // TODO error check
@@ -102,9 +80,7 @@ object RulesList extends Loggable with RulesDAOProvider {
 
   private object renderRulesVar extends RequestVar[Option[MemoizeTransform]](None)
 
-  private def addRule() = {
-    LiftUtils.bootboxPrompt("Rule name", addRuleByName)
-  }
+  private def addRule = LiftUtils.bootboxPrompt("Rule name", addRuleByName)
 
   private def addRuleByName(name: String) = {
     if (!name.isEmpty) {
@@ -116,23 +92,37 @@ object RulesList extends Loggable with RulesDAOProvider {
         s"""Cannot create rule "$name"""",
         Noop
       )
-/*      rule match {
-        case Full(r) => SetHtml("rules-list-container", renderRulesVar.is.get.applyAgain()) &
-          updateRule(r)
-        case _ => S.error(s"""Cannot create rule "$name"""")
-          Noop
-      }
-*/
     } else {
       Noop
     }
   }
+
+  private def save =
+    SHtml.jsonCall(JsRaw("$.jsonValues"), new JsContext(Empty, Empty), (values: JValue)=>{
+      //            println(values)
+      val rules = values match {
+        case JObject(x :: xs) =>
+          val l = x :: xs
+          l.foldLeft(List.empty[XMLRule]){ (actual, field) => actual.:+(jsonToRule(field.value))}
+        //l.foreach{ field => println("##### Saved " + jsonToRule(field))}
+        case _ => List.empty[XMLRule]
+      }
+
+      rulesDAO.updateRuleAndSave(RulesState.currentProjectName.get, RulesState.currentModuleName.get, rules) match {
+        case Full(result) => S.notice("Save succeeded")
+        case Failure(msg, _, _) => S.error("Save error: " + msg)
+        case _ => S.error("Save error")
+      }
+      Noop
+    })._2.toJsCmd
+
   def render() = {
     RulesState.resetCurrentRuleId
     renderRulesVar.set(Some(renderRules))
 
     "#rules-list-container *" #> renderRules &
     "#rules-list-title *" #> (RulesState.currentModuleName.get + " rules") &
-    "#add-rule [onClick]" #> addRule()
+    "#add-rule [onClick]" #> addRule &
+    "#rules-save [onclick]" #> save
   }
 }
