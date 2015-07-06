@@ -49,4 +49,25 @@ object LiftUtils {
       case Failure(msg, _, _) => S.error(message + ": " + msg); default
       case _ => S.error(message); default
     }
+
+  /**
+   * like SHtml.memoize, but used in conjunction with MemoizeTransformWithArg lets you use a function with an argument
+   * and to call applyAgain(srg)
+   */
+  def memoizeWithArg[T](f: (T) => (NodeSeq => NodeSeq), value: T) = {
+    new MemoizeTransformWithArg[T] {
+      private var lastNodeSeq: NodeSeq = NodeSeq.Empty
+
+      def apply(ns: NodeSeq) : NodeSeq = {
+        lastNodeSeq = ns
+        f(value)(ns)
+      }
+
+      def applyAgain(value: T): NodeSeq = f(value)(lastNodeSeq)
+    }
+  }
+}
+
+trait MemoizeTransformWithArg[T] extends Function1[NodeSeq, NodeSeq] {
+  def applyAgain(arg: T): NodeSeq
 }
