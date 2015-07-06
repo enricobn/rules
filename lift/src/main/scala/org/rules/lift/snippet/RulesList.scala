@@ -6,9 +6,10 @@ import net.liftweb.http._
 import net.liftweb.http.js.JE.JsRaw
 import net.liftweb.http.js.JsCmd
 import net.liftweb.http.js.JsCmds._
-import net.liftweb.json.DefaultFormats
+import net.liftweb.json.{Serialization, DefaultFormats}
 import net.liftweb.json.JsonAST._
 import net.liftweb.json.JsonDSL._
+import net.liftweb.sitemap.*
 import net.liftweb.util.Helpers._
 import org.rules.lift._
 import LiftUtils._
@@ -46,19 +47,20 @@ object RulesList extends Loggable with RulesDAOProvider {
   private def updateRule(rule: XMLRule): JsCmd = {
     val result = JsRaw(
       s"""
-            if (typeof $$.changedRules.jsonValues['${rule.id}'] != 'undefined') {
-              $$.jsonEditor.setValue($$.changedRules.jsonValues['${rule.id}']);
-              $$.jsonActiveId = '${rule.id}';
-            } else {
-          """ +
-        SHtml.jsonCall(rule.id, new JsonContext(Full("$.jsonFromServer"),
-          Full("$.jsonFromServerFailure")), (a: Any) => {
-          ruleToJson(rule)
+        if (typeof $$.changedRules.jsonValues['${rule.id}'] != 'undefined') {
+          $$.jsonEditor.setValue($$.changedRules.jsonValues['${rule.id}']);
+          $$.jsonActiveId = '${rule.id}';
+        } else {
+      """ +
+      SHtml.jsonCall(rule.id, new JsonContext(Full("$.jsonFromServer"), Full("$.jsonFromServerFailure")),
+        (a: Any) => ruleToJson(rule)
+      )._2.toJsCmd +
+      """
         }
-        )._2.toJsCmd +
-        "}\npack();"
+        $("#detail-editor").show();
+        pack()
+      """
     ) &
-    /*SetHtml("rules-list-container", renderRulesVar.is.get.applyAgain()) &*/
     ruleGroup.select(rule.id) &
     RulesState.currentRuleId.map(ruleGroup.deSelect(_)).getOrElse(Noop)
 
@@ -68,13 +70,10 @@ object RulesList extends Loggable with RulesDAOProvider {
   }
 
   private def renderRules(rules: Seq[XMLRule]) : NodeSeq => NodeSeq = {
-    // TODO error check
       "#rules-list-elements *" #> rules.map { rule =>
         ".select-rule [onClick]" #> ajaxInvoke(() => updateRule(rule)) &
           ".select-rule [id]" #> rulesFinder.getJQueryId(rule.id) &
-          ".select-rule *" #> rule.name /*&
-        ".del-project [onClick]" #> LiftUtils.bootboxConfirm(s"Are you sure to delete project ${project.name}?",
-          () => delProject(project.name))*/
+          ".select-rule *" #> rule.name
       }
   }
 
@@ -84,28 +83,19 @@ object RulesList extends Loggable with RulesDAOProvider {
 
   private def addRuleByName(name: String) = {
     if (!name.isEmpty) {
-      /*
+      val rule = rulesDAO.createRule(RulesState.currentProjectName.get, RulesState.currentModuleName.get, name)
+      val renderedRules = renderRulesVar.is.get.applyAgain(Seq(rule))
+      val renderedRule = (renderedRules \\ "_").filter{node =>(node \ "@id").text == rulesFinder.getJQueryId(rule.id)}
+      // for Serialization.write
+      implicit val formats = DefaultFormats
       Run(
         s"""
-          var rule = new Object();
-          rule.name = '$name';
-          $$.changedRules.jsonValues[id] = rule;
+          var rule = ${Serialization.write(ruleToJson(rule))};
+          $$.changedRules.jsonValues[rule.id] = rule;
+          $$('#rules-list-container').append('$renderedRule');
+          $$('#${rulesFinder.idPrefix}-' + rule.id).trigger('click');
+          $$("#detail-editor").show();
         """
-      )
-      */
-      val rule = rulesDAO.createRule(RulesState.currentProjectName.get, RulesState.currentModuleName.get, name)
-      val renderedRules = renderRulesVar.is.get.applyAgain(Seq(rule.get))
-      val renderedRule = (renderedRules \\ "_").filter{node =>(node \ "@id").text == rulesFinder.getJQueryId(rule.get.id)}
-//      println("**** RENDERRULE ****" + (renderedRule \\ "_"))
-      println("**** RENDERRULE ****" + renderedRule)
-
-      implicit val rules : Seq[XMLRule] = rulesDAO.getRules(RulesState.currentProjectName.get, RulesState.currentModuleName.get).get
-      LiftUtils.getOrElseError[XMLRule, JsCmd](
-        rule,
-        (r) => SetHtml("rules-list-container", renderRulesVar.is.get.applyAgain(rules)) &
-          updateRule(r),
-        s"""Cannot create rule "$name"""",
-        Noop
       )
     } else {
       Noop
@@ -125,7 +115,6 @@ object RulesList extends Loggable with RulesDAOProvider {
 
   private def save =
     SHtml.jsonCall(JsRaw("$.changedRules"), new JsContext(Empty, Empty), (changedRules: JValue)=>{
-      //            println(values)
       val rules = changedRules \ "jsonValues" match {
         case JObject(x :: xs) =>
           val l = x :: xs

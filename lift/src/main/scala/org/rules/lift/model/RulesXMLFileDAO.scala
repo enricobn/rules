@@ -62,10 +62,6 @@ object RulesXMLFileDAO extends RulesDAO {
   def getProject(name: String) = findProject(name, (projectFile) => Full(projectFile.xmlProject))
 
   def createRule(projectName: String, moduleName: String, name: String) =
-    findModule(projectName, moduleName, (projectFile, moduleFile) => {
-      val rule = XMLRule(UUID.randomUUID().toString, name, "", Seq.empty, Seq.empty, "")
-      moduleFile.updateAndSave(Seq(rule), Seq.empty)
-      Full(rule)
-    })
+      XMLRule(UUID.randomUUID().toString, name, "", Seq.empty, Seq.empty, "")
 
 }

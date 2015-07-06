@@ -52,7 +52,11 @@ object LiftUtils {
 
   /**
    * like SHtml.memoize, but used in conjunction with MemoizeTransformWithArg lets you use a function with an argument
-   * and to call applyAgain(srg)
+   * and to call applyAgain(arg) with a different value
+   * @param f the function to be called
+   * @param value the arg value passed in the first invocation, usually in the render function
+   * @tparam T the type of the arg
+   * @return
    */
   def memoizeWithArg[T](f: (T) => (NodeSeq => NodeSeq), value: T) = {
     new MemoizeTransformWithArg[T] {

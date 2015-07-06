@@ -28,6 +28,6 @@ trait RulesDAO {
 
   def getProject(name: String) : Box[XMLProject]
 
-  def createRule(projectName: String, moduleName: String, name: String) : Box[XMLRule]
+  def createRule(projectName: String, moduleName: String, name: String) : XMLRule
 
 }
