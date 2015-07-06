@@ -14,7 +14,7 @@ import org.rules.lift._
 import org.rules.lift.snippet.ProjectsList._
 import org.rules.rule.xml.{XMLRule, XMLProject}
 
-import scala.xml.Text
+import scala.xml.{NodeSeq, Text}
 
 /**
  * Created by enrico on 6/25/15.
@@ -67,27 +67,57 @@ object RulesList extends Loggable with RulesDAOProvider {
     result
   }
 
-  private val renderRules = SHtml.memoize {
-    // TODO error check
-    "#rules-list-elements *" #> rulesDAO.getRules(RulesState.currentProjectName.get, RulesState.currentModuleName.get).get.map{ rule =>
-      ".select-rule [onClick]" #> ajaxInvoke(() => updateRule(rule)) &
-        ".select-rule [id]" #> rulesFinder.getJQueryId(rule.id) &
-        ".select-rule *" #> rule.name /*&
+  private val renderRulesFunction = new PartialFunction[Seq[XMLRule], (NodeSeq) => NodeSeq] {
+    def apply(rules: Seq[XMLRule]) =
+      "#rules-list-elements *" #> rules.map { rule =>
+        ".select-rule [onClick]" #> ajaxInvoke(() => updateRule(rule)) &
+          ".select-rule [id]" #> rulesFinder.getJQueryId(rule.id) &
+          ".select-rule *" #> rule.name /*&
         ".del-project [onClick]" #> LiftUtils.bootboxConfirm(s"Are you sure to delete project ${project.name}?",
           () => delProject(project.name))*/
-    }
+      }
+
+    def isDefinedAt(rules: Seq[XMLRule]) = true
   }
 
-  private object renderRulesVar extends RequestVar[Option[MemoizeTransform]](None)
+  private def renderRules(rules: Seq[XMLRule])(html: NodeSeq) : NodeSeq = {
+    // TODO error check
+    val sel =
+      "#rules-list-elements *" #> rules.map { rule =>
+        ".select-rule [onClick]" #> ajaxInvoke(() => updateRule(rule)) &
+          ".select-rule [id]" #> rulesFinder.getJQueryId(rule.id) &
+          ".select-rule *" #> rule.name /*&
+        ".del-project [onClick]" #> LiftUtils.bootboxConfirm(s"Are you sure to delete project ${project.name}?",
+          () => delProject(project.name))*/
+      }
+    sel(html)
+  }
+
+  private object renderRulesVar extends RequestVar[Option[MemoizeRulesTransform]](None)
 
   private def addRule = LiftUtils.bootboxPrompt("Rule name", addRuleByName)
 
   private def addRuleByName(name: String) = {
     if (!name.isEmpty) {
+      /*
+      Run(
+        s"""
+          var rule = new Object();
+          rule.name = '$name';
+          $$.changedRules.jsonValues[id] = rule;
+        """
+      )
+      */
       val rule = rulesDAO.createRule(RulesState.currentProjectName.get, RulesState.currentModuleName.get, name)
+      val renderedRules = renderRulesVar.is.get.applyAgain(Seq(rule.get))
+      val renderedRule = (renderedRules \\ "_").filter{node =>(node \ "@id").text == rulesFinder.getJQueryId(rule.get.id)}
+//      println("**** RENDERRULE ****" + (renderedRule \\ "_"))
+      println("**** RENDERRULE ****" + renderedRule)
+
+      implicit val rules : Seq[XMLRule] = rulesDAO.getRules(RulesState.currentProjectName.get, RulesState.currentModuleName.get).get
       LiftUtils.getOrElseError[XMLRule, JsCmd](
         rule,
-        (r) => SetHtml("rules-list-container", renderRulesVar.is.get.applyAgain()) &
+        (r) => SetHtml("rules-list-container", renderRulesVar.is.get.applyAgain(rules)) &
           updateRule(r),
         s"""Cannot create rule "$name"""",
         Noop
@@ -134,12 +164,37 @@ object RulesList extends Loggable with RulesDAOProvider {
 
   def render() = {
     RulesState.resetCurrentRuleId
-    renderRulesVar.set(Some(renderRules))
+    val rules : Seq[XMLRule] =
+      rulesDAO.getRules(RulesState.currentProjectName.get, RulesState.currentModuleName.get).get
 
-    "#rules-list-container *" #> renderRules &
+    renderRulesVar.set(Some(memoize(renderRulesFunction, rules)))
+
+    "#rules-list-container *" #> renderRulesVar.is.get &
     "#rules-list-title *" #> (RulesState.currentModuleName.get + " rules") &
     "#add-rule [onClick]" #> addRule &
     "#del-rule [onClick]" #> delRule &
     "#rules-save [onclick]" #> save
+  }
+
+  trait MemoizeRulesTransform extends Function1[NodeSeq, NodeSeq] {
+    def applyAgain(rules: Seq[XMLRule]): NodeSeq
+  }
+
+  /**
+   * Memoize the NodeSeq used in apply() and then call
+   * applyAgain() in an Ajax call and you don't have to
+   * explicitly capture the template
+   */
+  def memoize(f: PartialFunction[Seq[XMLRule], (NodeSeq) => NodeSeq], rules: Seq[XMLRule]) = {
+    new MemoizeRulesTransform {
+      private var lastNodeSeq: NodeSeq = NodeSeq.Empty
+
+      def apply(ns: NodeSeq) : NodeSeq = {
+        lastNodeSeq = ns
+        f(rules)(ns)
+      }
+
+      def applyAgain(rules: Seq[XMLRule]): NodeSeq = f(rules)(lastNodeSeq)
+    }
   }
 }
