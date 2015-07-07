@@ -3,7 +3,7 @@ package org.rules.lift.snippet
 import net.liftweb.common._
 import net.liftweb.http.SHtml._
 import net.liftweb.http._
-import net.liftweb.http.js.JE.JsRaw
+import net.liftweb.http.js.JE.{JsVar, JsRaw}
 import net.liftweb.http.js.JsCmd
 import net.liftweb.http.js.JsCmds._
 import net.liftweb.json.{Serialization, DefaultFormats}
@@ -72,7 +72,7 @@ object RulesList extends Loggable with RulesDAOProvider {
   private def renderRules(rules: Seq[XMLRule]) : NodeSeq => NodeSeq = {
       "#rules-list-elements *" #> rules.map { rule =>
         ".select-rule [onClick]" #> ajaxInvoke(() => updateRule(rule)) &
-          ".select-rule [id]" #> rulesFinder.getJQueryId(rule.id) &
+          ".select-rule [id]" #> rulesFinder.getDOMId(rule.id) &
           ".select-rule *" #> rule.name
       }
   }
@@ -85,7 +85,7 @@ object RulesList extends Loggable with RulesDAOProvider {
     if (!name.isEmpty) {
       val rule = rulesDAO.createRule(RulesState.currentProjectName.get, RulesState.currentModuleName.get, name)
       val renderedRules = renderRulesVar.is.get.applyAgain(Seq(rule))
-      val renderedRule = (renderedRules \\ "_").filter{node =>(node \ "@id").text == rulesFinder.getJQueryId(rule.id)}
+      val renderedRule = (renderedRules \\ "_").filter{node =>(node \ "@id").text == rulesFinder.getDOMId(rule.id)}
       // for Serialization.write
       implicit val formats = DefaultFormats
       Run(
@@ -93,7 +93,7 @@ object RulesList extends Loggable with RulesDAOProvider {
           var rule = ${Serialization.write(ruleToJson(rule))};
           $$.changedRules.jsonValues[rule.id] = rule;
           $$('#rules-list-container').append('$renderedRule');
-          $$('#${rulesFinder.idPrefix}-' + rule.id).trigger('click');
+          ${rulesFinder.find(JsRaw("rule.id")).toJsCmd}.trigger('click');
           $$("#detail-editor").show();
         """
       )
@@ -106,7 +106,7 @@ object RulesList extends Loggable with RulesDAOProvider {
     Run(
         s"""
            if (typeof $$.jsonActiveId != 'undefined') {
-              $$('#${rulesFinder.idPrefix}' + '-' + $$.jsonActiveId).hide();
+              ${rulesFinder.find(JsRaw("$.jsonActiveId")).toJsCmd}.hide();
               $$.changedRules.deleted.push($$.jsonActiveId);
               $$("#detail-editor").hide();
               $$.jsonActiveId = undefined;

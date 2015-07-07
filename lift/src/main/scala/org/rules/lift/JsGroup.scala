@@ -54,6 +54,7 @@ trait JsGroup {
 
 trait JQueryFinder {
   def find(id: String) : JsExp
+  def find(id: JsExp) : JsExp
 }
 
 trait JQueryApplier {
@@ -67,8 +68,10 @@ case class JQueryGroup(finder : JQueryFinder, applyier : JQueryApplier) extends 
 }
 
 case class JQueryById(idPrefix: String) extends JQueryFinder {
-  def find(id: String) : JsExp = Call("$", "#" + getJQueryId(id)) // s"$$('#$idPrefix-$id')"
-  def getJQueryId(id: String) = s"$idPrefix-$id"
+  def find(id: String) : JsExp = Call("$", "#" + getDOMId(id))
+  def getDOMId(id: String) = s"${idPrefix}_$id"
+  def find(id: JsExp) : JsExp = Call("$", JsRaw(s"'#${idPrefix}_'") + id)
+  def getId(domId: String) = domId.substring(idPrefix.length + 1)
 }
 
 object JQueryHide extends JQueryApplier {

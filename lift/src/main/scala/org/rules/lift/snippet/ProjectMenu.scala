@@ -94,7 +94,7 @@ object ProjectMenu extends RulesDAOProvider {
       ".select-module [onClick]" #> ajaxInvoke(() => updateModule(module.name)) &
       ".select-module *" #> module.name &
       ".list-rules [onClick]" #> ajaxInvoke(() => updateRules()) &
-      ".modules-buttons [id]" #> modulesFinder.getJQueryId(module.name) &
+      ".modules-buttons [id]" #> modulesFinder.getDOMId(module.name) &
       ".modules-buttons [style+]" #> "display: none;" &
       ".del-module [onClick]" #> LiftUtils.bootboxConfirm(s"Are you sure to delete module ${module.name}?",
           () => delModule(module.name))
