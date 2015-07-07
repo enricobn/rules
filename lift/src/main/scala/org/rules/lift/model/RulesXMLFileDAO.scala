@@ -3,7 +3,7 @@ package org.rules.lift.model
 import java.io.File
 import java.util.UUID
 
-import net.liftweb.common.{Full, Failure, Box}
+import net.liftweb.common.{Empty, Full, Failure, Box}
 import org.rules.rule.Logged
 import org.rules.rule.xml.{XMLModuleFile, XMLProjectFile, XMLRule}
 
@@ -64,4 +64,9 @@ object RulesXMLFileDAO extends RulesDAO {
   def createRule(projectName: String, moduleName: String, name: String) =
       XMLRule(UUID.randomUUID().toString, name, "", Seq.empty, Seq.empty, "")
 
+  def getRule(projectName: String, moduleName: String, id: String) : Box[XMLRule] =
+    getRules(projectName, moduleName) match {
+      case Full(rules) => rules.find(_.id == id)
+      case _ => Empty
+    }
 }
