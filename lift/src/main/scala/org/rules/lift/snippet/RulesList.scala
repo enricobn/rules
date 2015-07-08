@@ -47,9 +47,18 @@ object RulesList extends Loggable with RulesDAOProvider {
   private def updateRule(rule: XMLRule): JsCmd = {
     val result = JsRaw(
       s"""
-        if (typeof $$.changedRules.jsonValues['${rule.id}'] != 'undefined') {
-          $$.jsonEditor.setValue($$.changedRules.jsonValues['${rule.id}']);
-          $$.jsonActiveId = '${rule.id}';
+        $$.jsonEditor.disable();
+        $$.jsonEditor.off('change', $$.changedRules.changeListener);
+        $$.changedRules.editingActive = false;
+        if (typeof $$.changedRules.cache['${rule.id}'] != 'undefined') {
+          $$.jsonEditor.setValue($$.changedRules.cache['${rule.id}']);
+          $$.changedRules.activeId = '${rule.id}';
+          $$("#detail-editor").show();
+          window.requestAnimationFrame(function() {
+            $$.jsonEditor.enable();
+            $$.jsonEditor.on('change', $$.changedRules.changeListener);
+            $$.changedRules.editingActive = true;
+          });
         } else {
       """ +
       SHtml.jsonCall(rule.id, new JsonContext(Full("$.jsonFromServer"), Full("$.jsonFromServerFailure")),
@@ -57,8 +66,6 @@ object RulesList extends Loggable with RulesDAOProvider {
       )._2.toJsCmd +
       """
         }
-        $("#detail-editor").show();
-        pack()
       """
     ) &
     RulesState.currentRuleId.map(ruleGroup.deSelect(_)).getOrElse(Noop) &
@@ -91,10 +98,10 @@ object RulesList extends Loggable with RulesDAOProvider {
       Run(
         s"""
           var rule = ${Serialization.write(ruleToJson(rule))};
-          $$.changedRules.jsonValues[rule.id] = rule;
+          $$.changedRules.cache[rule.id] = rule;
+          $$.changedRules.changed[rule.id] = rule.id;
           $$('#rules-list-container').append('$renderedRule');
           ${rulesFinder.find(JsRaw("rule.id")).toJsCmd}.trigger('click');
-          $$("#detail-editor").show();
         """
       )
     } else {
@@ -105,17 +112,19 @@ object RulesList extends Loggable with RulesDAOProvider {
   private def delRule =
     Run(
         s"""
-           if (typeof $$.jsonActiveId != 'undefined') {
-              ${rulesFinder.find(JsRaw("$.jsonActiveId")).toJsCmd}.hide();
-              $$.changedRules.deleted.push($$.jsonActiveId);
+           if (typeof $$.changedRules.activeId != 'undefined') {
+              $$.changedRules.editingActive = false;
+              ${rulesFinder.find(JsRaw("$.changedRules.activeId")).toJsCmd}.hide();
+              $$.changedRules.deleted.push($$.changedRules.activeId);
               $$("#detail-editor").hide();
-              $$.jsonActiveId = undefined;
+              $$.changedRules.activeId = undefined;
             }
         """)
 
   private def save =
-    SHtml.jsonCall(JsRaw("$.changedRules"), new JsContext(Empty, Empty), (changedRules: JValue)=>{
-      val rules = changedRules \ "jsonValues" match {
+    SHtml.jsonCall(JsRaw("editChanges($.changedRules)"), new JsContext(Empty, Empty), (changedRules: JValue)=>{
+      println(changedRules)
+      val rules = changedRules \ "changed" match {
         case JObject(x :: xs) =>
           val l = x :: xs
           l.foldLeft(List.empty[XMLRule]){ (actual, field) => actual.:+(jsonToRule(field.value))}
@@ -133,7 +142,7 @@ object RulesList extends Loggable with RulesDAOProvider {
         case Failure(msg, _, _) => S.error("Save error: " + msg)
         case _ => S.error("Save error")
       }
-      Noop
+      Run("editAfterSave($.changedRules);")
     })._2.toJsCmd
 
   def render() = {

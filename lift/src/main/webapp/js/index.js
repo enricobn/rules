@@ -44,6 +44,45 @@ function fireBeforeContentChange() {
     return result;
 }
 
+/*
+.deleted : Array of ids (string)
+.changed : Object key = id, value =
+*/
+function editChanges(container) {
+    var result = new Object();
+    result.changed = new Object();
+    result.deleted = container.deleted;
+    for (var id in container.changed) {
+        result.changed[id] = container.cache[id];
+    }
+    return result;
+}
+
+/*
+init the container for editing properties
+*/
+function editInit(container) {
+    container.cache = new Object();
+    container.changed = new Object();
+    container.deleted = new Array();
+    container.activeId = undefined;
+    container.editingActive = false;
+    container.changeListener = function() {
+     if (container.editingActive && $.jsonEditor.isEnabled()) {
+       if (typeof container.activeId != 'undefined') {
+         container.cache[container.activeId] = $.jsonEditor.getValue();
+         container.changed[container.activeId] = container.activeId;
+         console.log("jsonEditor.changed");
+       }
+     }
+   };
+}
+
+function editAfterSave(container) {
+    container.changed = new Object();
+    container.deleted = new Array();
+}
+
 $(document).ready(function () {
     $.contentListeners = new Array();
     $('[data-toggle="tooltip"]').tooltip();

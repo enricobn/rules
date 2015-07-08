@@ -44,10 +44,15 @@ object EditRules extends RulesDAOProvider {
           // it's the callback of getting an item from the server, v is the Json value
           $$.jsonFromServer = function(v) {
             console.log('got json from server');
-            $$.changedRules.jsonValues[v.id] = v;
+            $$.changedRules.cache[v.id] = v;
             $$.jsonEditor.setValue(v);
-            $$.jsonActiveId =  v.id;
+            $$.changedRules.activeId =  v.id;
             $$("#detail-editor").show();
+            window.requestAnimationFrame(function() {
+              $$.jsonEditor.enable();
+              $$.jsonEditor.on('change', $$.changedRules.changeListener);
+              $$.changedRules.editingActive = true;
+            });
           };
 
           // it's the callback of the error getting an item from the server
@@ -73,26 +78,17 @@ object EditRules extends RulesDAOProvider {
         // to hide the title of the editor
         $$( "span:contains('hide-me')" ).parent().hide();
 
-        // on change values in the editor, I update the cache
-        $$.jsonEditor.on('change', function() {
-          if (typeof $$.jsonActiveId != 'undefined') {
-            $$.changedRules.jsonValues[$$.jsonActiveId] = $$.jsonEditor.getValue();
-            console.log("jsonEditor.changed");
-          }
-        });
         $$.changedRules = new Object();
-
-        // the cache of items, key=id value=json
-        $$.changedRules.jsonValues = new Object();
-        // deleted rules ids
-        $$.changedRules.deleted = new Array();
-        // the id of the active item
-        $$.jsonActiveId = undefined;
+        editInit($$.changedRules);
 
         if (typeof $$.rulesContentListener == 'undefined') {
           $$.rulesContentListener = new Object();
           $$.rulesContentListener.beforeContentChange = function() {
-            return confirm("Do you want to loose changes?");
+            if (Object.keys($$.changedRules.changed).length > 0 || $$.changedRules.deleted.length > 0) {
+                return confirm("Do you want to loose changes?");
+            } else {
+              return true;
+            }
           };
         }
         addContentListener($$.rulesContentListener);
