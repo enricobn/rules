@@ -61,8 +61,8 @@ object RulesList extends Loggable with RulesDAOProvider {
         pack()
       """
     ) &
-    ruleGroup.select(rule.id) &
-    RulesState.currentRuleId.map(ruleGroup.deSelect(_)).getOrElse(Noop)
+    RulesState.currentRuleId.map(ruleGroup.deSelect(_)).getOrElse(Noop) &
+    ruleGroup.select(rule.id)
 
     RulesState.setCurrentRuleId(rule.id)
 

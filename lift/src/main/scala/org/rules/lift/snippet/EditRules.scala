@@ -77,6 +77,7 @@ object EditRules extends RulesDAOProvider {
         $$.jsonEditor.on('change', function() {
           if (typeof $$.jsonActiveId != 'undefined') {
             $$.changedRules.jsonValues[$$.jsonActiveId] = $$.jsonEditor.getValue();
+            console.log("jsonEditor.changed");
           }
         });
         $$.changedRules = new Object();
@@ -87,6 +88,14 @@ object EditRules extends RulesDAOProvider {
         $$.changedRules.deleted = new Array();
         // the id of the active item
         $$.jsonActiveId = undefined;
+
+        if (typeof $$.rulesContentListener == 'undefined') {
+          $$.rulesContentListener = new Object();
+          $$.rulesContentListener.beforeContentChange = function() {
+            return confirm("Do you want to loose changes?");
+          };
+        }
+        addContentListener($$.rulesContentListener);
         pack();
       """
     )))

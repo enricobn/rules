@@ -55,16 +55,7 @@ object ProjectMenu extends RulesDAOProvider {
   }
 
   private def addModule() = {
-    /*    SetValById("add-project-name", "new project") &
-        JsShowId("add-project-name") &
-        Run("pack();")
-    */
-    Run(s"""bootbox.prompt("Module name", function(result) {
-          if(result != null) {
-            ${ajaxCall(JsVar("result"), addModuleCall)};
-          }
-        });
-        """)
+    LiftUtils.bootboxPrompt("Module name", addModuleCall)
   }
 
   private def delModule(id: String) = {
@@ -72,18 +63,15 @@ object ProjectMenu extends RulesDAOProvider {
       newProject <- rulesDAO.delModule(RulesState.currentProjectName.get, id)
       result <- Full(
         RulesState.moduleDeleted(id) &
-        SetHtml("modules-list-container  ", renderModulesVar.is.get.applyAgain()) &
+        SetHtml("modules-list-container", renderModulesVar.is.get.applyAgain()) &
         Run("pack();")
       )
     } yield result).getOrElse(Noop)
   }
 
   private def updateRules() : JsCmd = {
-    CmdPair(
-      SetHtml("content",
-        EditRules.embed
-        //  <h2>Rules</h2> ++ module.rules.foldLeft(NodeSeq.Empty) {(actual,rule) => actual ++ ruleForm(rule) ++ <br></br>}
-      ),
+    LiftRulesUtils.beforeContentChange(
+      SetHtml("content", EditRules.embed) &
       Run("$.ruleEditor = undefined;")
     )
   }

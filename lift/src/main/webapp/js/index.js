@@ -16,7 +16,36 @@ function pack() {
     //console.log($('#nav'));
 }
 
+function addContentListener(listener) {
+    $.contentListeners.push(listener);
+}
+
+function removeContentListener(listener) {
+    $.contentListeners = $.contentListeners.filter(
+        function(item) {
+            if (item !== listener) {
+                return item;
+            }
+        }
+    );
+}
+
+/* returns true if content can be changed */
+function fireBeforeContentChange() {
+    var result = true;
+    $.contentListeners.forEach(function(item) {
+        result &= item.beforeContentChange();
+    });
+    /* TODO I think it's ugly, but for now it works */
+    /* I remove the listeners */
+    if (result) {
+        $.contentListeners = new Array();
+    }
+    return result;
+}
+
 $(document).ready(function () {
+    $.contentListeners = new Array();
     $('[data-toggle="tooltip"]').tooltip();
     $(window).resize(pack);
     pack();
