@@ -97,11 +97,10 @@ object RulesList extends Loggable with RulesDAOProvider {
       implicit val formats = DefaultFormats
       Run(
         s"""
-          var rule = ${Serialization.write(ruleToJson(rule))};
-          $$.changedRules.cache[rule.id] = rule;
-          $$.changedRules.changed[rule.id] = rule.id;
+          $$.changedRules.cache['${rule.id}'] = ${Serialization.write(ruleToJson(rule))};
+          $$.changedRules.changed['${rule.id}'] = '${rule.id}';
           $$('#rules-list-container').append('$renderedRule');
-          ${rulesFinder.find(JsRaw("rule.id")).toJsCmd}.trigger('click');
+          ${rulesFinder.find(rule.id).toJsCmd}.trigger('click');
         """
       )
     } else {
