@@ -91,8 +91,7 @@ object RulesList extends Loggable with RulesDAOProvider {
   private def addRuleByName(name: String) = {
     if (!name.isEmpty) {
       val rule = rulesDAO.createRule(RulesState.currentProjectName.get, RulesState.currentModuleName.get, name)
-      val renderedRules = renderRulesVar.is.get.applyAgain(Seq(rule))
-      val renderedRule = (renderedRules \\ "_").filter{node =>(node \ "@id").text == rulesFinder.getDOMId(rule.id)}
+      val renderedRule = renderRulesVar.is.get.applyAgain(Seq(rule)) \ "_"
       // for Serialization.write
       implicit val formats = DefaultFormats
       Run(
