@@ -81,17 +81,6 @@ object EditRules extends RulesDAOProvider {
         $$.changedRules = new Object();
         editInit($$.changedRules);
 
-        if (typeof $$.rulesContentListener == 'undefined') {
-          $$.rulesContentListener = new Object();
-          $$.rulesContentListener.beforeContentChange = function() {
-            if (Object.keys($$.changedRules.changed).length > 0 || $$.changedRules.deleted.length > 0) {
-                return confirm("Do you want to loose changes?");
-            } else {
-              return true;
-            }
-          };
-        }
-        addContentListener($$.rulesContentListener);
         pack();
       """
     )))

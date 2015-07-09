@@ -67,6 +67,7 @@ function editInit(container) {
     container.deleted = new Array();
     container.activeId = undefined;
     container.editingActive = false;
+
     container.changeListener = function() {
      if (container.editingActive && $.jsonEditor.isEnabled()) {
        if (typeof container.activeId != 'undefined') {
@@ -75,7 +76,17 @@ function editInit(container) {
          console.log("jsonEditor.changed");
        }
      }
-   };
+    };
+
+    container.contentListener = new Object();
+    container.contentListener.beforeContentChange = function() {
+        if (Object.keys(container.changed).length > 0 || container.deleted.length > 0) {
+            return confirm("Do you want to loose changes?");
+        } else {
+           return true;
+        }
+    };
+   addContentListener(container.contentListener);
 }
 
 function editAfterSave(container) {
