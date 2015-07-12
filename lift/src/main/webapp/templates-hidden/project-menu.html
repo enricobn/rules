@@ -10,13 +10,19 @@
     <script type="text/javascript" src="../js/jquery.blockUI.js"></script>
     <script type="text/javascript" src="../js/jsoneditor.min.js"></script>
     <script type="text/javascript" src="../js/bootstrap.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $('[data-toggle="tooltip"]').tooltip();
+        });
+    </script>
 </head>
 <body class="lift:content_id=real_content">
     <div id="real_content" class="lift:ProjectMenu.render">
         <h4 id="project-name" style="margin-left: 10px; margin-right: 10px;">Project name</h4>
         <div id="modules-list-container">
             <div id="modules-list">
-                <div class="del-module btn btn-primary btn-xs lt-margin glyphicon glyphicon-minus"></div>
+                <div class="del-module btn btn-primary btn-xs lt-margin glyphicon glyphicon-remove"
+                     data-toggle="tooltip" title="Delete"></div>
                 <div class="select-module btn btn-primary rules-nav">module</div>
                 <div class="modules-buttons">
                     <div class="list-rules btn btn-info rules-nav" style="margin-left: 20px;">Rules</div>
@@ -25,7 +31,8 @@
                 </div>
             </div>
         </div>
-        <div class="btn btn-primary btn-xs glyphicon glyphicon-plus rules-nav" id="add-module"></div>
+        <div class="btn btn-primary btn-xs glyphicon glyphicon-plus rules-nav" id="add-module"
+             data-toggle="tooltip" title="Add"></div>
     </div>
 </body>
 </html>

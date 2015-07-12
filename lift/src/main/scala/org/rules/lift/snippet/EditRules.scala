@@ -52,6 +52,7 @@ object EditRules extends RulesDAOProvider {
               $$.jsonEditor.enable();
               $$.jsonEditor.on('change', $$.changedRules.changeListener);
               $$.changedRules.editingActive = true;
+              $$('[data - toggle = "tooltip"]').tooltip();
             });
           };
 

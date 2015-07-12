@@ -71,6 +71,7 @@ object ProjectsList extends Loggable with RulesDAOProvider {
 
   def render() = {
     renderProjectsVar.set(Some(renderProjects))
+    S.appendJs(Run("""$('[data-toggle="tooltip"]').tooltip();"""))
 
     "#projects-list-container *" #> renderProjects &
     "#add-project [onClick]" #> addProject()

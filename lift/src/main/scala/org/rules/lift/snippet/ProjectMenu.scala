@@ -93,6 +93,7 @@ object ProjectMenu extends RulesDAOProvider {
 
   def render = {
     renderModulesVar.set(Some(renderModules))
+    S.appendJs(Run("""$('[data-toggle="tooltip"]').tooltip();"""))
 
     "#modules-list-container *" #> renderModules &
     "#project-name *" #> RulesState.currentProjectName.get &

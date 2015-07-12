@@ -58,6 +58,7 @@ object RulesList extends Loggable with RulesDAOProvider {
             $$.jsonEditor.enable();
             $$.jsonEditor.on('change', $$.changedRules.changeListener);
             $$.changedRules.editingActive = true;
+            $$('[data - toggle = "tooltip"]').tooltip();
           });
         } else {
       """ +
@@ -149,6 +150,8 @@ object RulesList extends Loggable with RulesDAOProvider {
       rulesDAO.getRules(RulesState.currentProjectName.get, RulesState.currentModuleName.get).get
 
     renderRulesVar.set(Some(memoizeWithArg(renderRules, rules)))
+
+    S.appendJs(Run("""$('[data-toggle="tooltip"]').tooltip();"""))
 
     "#rules-list-container *" #> renderRulesVar.is.get &
     "#rules-list-title *" #> (RulesState.currentModuleName.get + " rules") &
