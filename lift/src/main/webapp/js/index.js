@@ -78,6 +78,27 @@ function editInit(container) {
      }
     };
 
+    container.updateEditor = function(v) {
+        console.log('updating editor');
+        container.cache[v.id] = v;
+        $.jsonEditor.setValue(v);
+        container.activeId = v.id;
+        $("#detail-editor").show();
+        window.requestAnimationFrame(function() {
+          $.jsonEditor.enable();
+          $.jsonEditor.on('change', container.changeListener);
+          container.editingActive = true;
+          /* to enable bootstrap's tooltip style in json editor, but it does not work! */
+          $('[data-toggle="tooltip"]').tooltip();
+        });
+    };
+/*
+    container.onError = function() {
+        console.log("error");
+        // TODO do it better
+        alert("Error");
+    };
+*/
     container.contentListener = new Object();
     container.contentListener.beforeContentChange = function() {
         if (Object.keys(container.changed).length > 0 || container.deleted.length > 0) {

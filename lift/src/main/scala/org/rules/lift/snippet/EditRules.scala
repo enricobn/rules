@@ -40,31 +40,6 @@ object EditRules extends RulesDAOProvider {
           $$.jsonEditor.destroy();
         }
 
-        if (typeof $$.jsonFromServer == 'undefined') {
-          // it's the callback of getting an item from the server, v is the Json value
-          $$.jsonFromServer = function(v) {
-            console.log('got json from server');
-            $$.changedRules.cache[v.id] = v;
-            $$.jsonEditor.setValue(v);
-            $$.changedRules.activeId =  v.id;
-            $$("#detail-editor").show();
-            window.requestAnimationFrame(function() {
-              $$.jsonEditor.enable();
-              $$.jsonEditor.on('change', $$.changedRules.changeListener);
-              $$.changedRules.editingActive = true;
-              /* to enable bootstrap's tooltip style in json editor, but it does not work! */
-              $$('[data-toggle="tooltip"]').tooltip();
-            });
-          };
-
-          // it's the callback of the error getting an item from the server
-          $$.jsonFromServerFailure = function() {
-            console.log('Error getting json from server');
-            // TODO do it better
-            alert('Error getting json from server.');
-          };
-        }
-
         JSONEditor.defaults.options.theme = 'bootstrap3';
         JSONEditor.defaults.iconlib = 'bootstrap3';
         JSONEditor.defaults.options.disable_edit_json = true;

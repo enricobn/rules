@@ -2,7 +2,7 @@ package bootstrap.liftweb
 
 import net.liftweb.common.Loggable
 import net.liftweb.http.js.{JsCmds, JsCmd}
-import net.liftweb.http.{JavaScriptResponse, Html5Properties, LiftRules, Req, NoticeType}
+import net.liftweb.http._
 import net.liftweb.sitemap.{Menu, SiteMap}
 import net.liftweb.common.Full
 import net.liftweb.util.Helpers._
@@ -35,14 +35,40 @@ class Boot extends Loggable  {
       override def toJsCmd: String = s"showError('${ex.getMessage}', '${ex.getStackTrace.toString}')"
     }
 */
+    LiftRules.ajaxStart  =  Full(() => LiftRules.jsArtifacts.show("ajax_spinner").cmd)
+
+    LiftRules.ajaxEnd  =  Full(() => LiftRules.jsArtifacts.hide("ajax_spinner").cmd)
+
     LiftRules.exceptionHandler.prepend {
-      case (mode, req, ex : Exception) =>
+      case (mode, req, ex: Exception) => {
         logger.error("Error from " + req, ex)
         JavaScriptResponse(JsCmds.Alert("Error: " + ex.getMessage))
-      //new OnError(ex))
-      //ModalDialog(<p>Crap it failed.</p>))
+        //new OnError(ex))
+        //ModalDialog(<p>Crap it failed.</p>))
+      }
     }
 
+    /*
+    LiftRules.exceptionHandler.prepend {
+      case (runMode, req, exception) => {
+        /*
+        logger.error("Failed at: "+req.uri, exception)
+        RedirectResponse("/500.html")
+        val content = S.render(<lift:embed what="500" />, req.request)
+       XmlResponse(content.head, 500, "text/html", req.cookies)
+       */
+        ExceptionResponse(runMode, req, exception)
+      }
+    }*/
+
+ /*   LiftRules.exceptionHandler.prepend {
+      case (runMode, request, exception) =>
+        logger.error("Failed at: "+request.uri)
+        //InternalServerErrorResponse()
+        S.notice(exception.getMessage)
+        InMemoryResponse("Hello".getBytes("UTF-8"), request.headers, request.cookies, 500)
+    }
+*/
     LiftRules.noticesAutoFadeOut.default.set(
       (notices: NoticeType.Value) =>Full(2 seconds, 2 seconds))
 

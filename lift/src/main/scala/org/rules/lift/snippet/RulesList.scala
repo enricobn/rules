@@ -45,33 +45,22 @@ object RulesList extends Loggable with RulesDAOProvider {
   }
 
   private def updateRule(rule: XMLRule): JsCmd = {
+    // for Serialization.write
+    implicit val formats = DefaultFormats
     val result = JsRaw(
       s"""
         $$.jsonEditor.disable();
         $$.jsonEditor.off('change', $$.changedRules.changeListener);
         $$.changedRules.editingActive = false;
         if (typeof $$.changedRules.cache['${rule.id}'] != 'undefined') {
-          $$.jsonEditor.setValue($$.changedRules.cache['${rule.id}']);
-          $$.changedRules.activeId = '${rule.id}';
-          $$("#detail-editor").show();
-          window.requestAnimationFrame(function() {
-            $$.jsonEditor.enable();
-            $$.jsonEditor.on('change', $$.changedRules.changeListener);
-            $$.changedRules.editingActive = true;
-            /* to enable bootstrap's tooltip style in json editor, but it does not work! */
-            $$('[data-toggle="tooltip"]').tooltip();
-          });
+          $$.changedRules.updateEditor($$.changedRules.cache['${rule.id}']);
         } else {
-      """ +
-      SHtml.jsonCall(rule.id, new JsonContext(Full("$.jsonFromServer"), Full("$.jsonFromServerFailure")),
-        (a: Any) => ruleToJson(rule)
-      )._2.toJsCmd +
-      """
+          $$.changedRules.updateEditor(${Serialization.write(ruleToJson(rule))});
         }
       """
     ) &
     RulesState.currentRuleId.map(ruleGroup.deSelect(_)).getOrElse(Noop) &
-    ruleGroup.select(rule.id)
+      ruleGroup.select(rule.id)
 
     RulesState.setCurrentRuleId(rule.id)
 
