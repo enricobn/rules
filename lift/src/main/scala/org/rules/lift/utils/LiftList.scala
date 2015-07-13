@@ -11,7 +11,12 @@ trait LiftList[T] {
   def fromJson(value: JValue): T
 
   protected def write(value: T) : String = {
-    implicit val formats = DefaultFormats
-    Serialization.write(toJson(value))
+    write(toJson(value))
   }
+
+  protected def write(value: JValue) : String = {
+    implicit val formats = DefaultFormats
+    Serialization.write(value)
+  }
+
 }

@@ -32,29 +32,8 @@ object RulesList extends Loggable with RulesDAOProvider with LiftList[XMLRule] {
     <div class="lift:embed?what=/rules-list"></div> ++
       Script(OnLoad( Run(
         s"""
-        if (typeof $$.jsonEditor != 'undefined') {
-          $$.jsonEditor.destroy();
-        }
-
-        JSONEditor.defaults.options.theme = 'bootstrap3';
-        JSONEditor.defaults.iconlib = 'bootstrap3';
-        JSONEditor.defaults.options.disable_edit_json = true;
-        JSONEditor.defaults.options.disable_properties = true;
-        JSONEditor.defaults.options.disable_collapse = true;
-
-        $$("#detail-editor").empty();
-
-        $$("#detail-editor").hide();
-
-        $$.jsonEditor = new JSONEditor(document.getElementById("detail-editor"), $schema);
-
-        // to hide the title of the editor
-        $$( "span:contains('hide-me')" ).parent().hide();
-
         $$.changedRules = new Object();
-        editInit($$.changedRules);
-
-        pack();
+        editInit($$.changedRules, $schema);
       """
       )))
   }

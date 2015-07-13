@@ -61,7 +61,26 @@ function editChanges(container) {
 /*
 init the container for editing properties
 */
-function editInit(container) {
+function editInit(container, schema) {
+    if (typeof $.jsonEditor != 'undefined') {
+      $.jsonEditor.destroy();
+    }
+
+    JSONEditor.defaults.options.theme = 'bootstrap3';
+    JSONEditor.defaults.iconlib = 'bootstrap3';
+    JSONEditor.defaults.options.disable_edit_json = true;
+    JSONEditor.defaults.options.disable_properties = true;
+    JSONEditor.defaults.options.disable_collapse = true;
+
+    $("#detail-editor").empty();
+
+    $("#detail-editor").hide();
+
+    $.jsonEditor = new JSONEditor(document.getElementById("detail-editor"), schema);
+
+    // to hide the title of the editor
+    $( "span:contains('hide-me')" ).parent().hide();
+
     container.cache = new Object();
     container.changed = new Object();
     container.deleted = new Array();
