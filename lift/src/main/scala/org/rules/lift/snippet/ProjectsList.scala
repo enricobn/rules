@@ -9,9 +9,10 @@ import net.liftweb.http.js.JE.JsVar
 import net.liftweb.http.js.JsCmd
 import net.liftweb.http.js.JsCmds._
 import net.liftweb.util.CssSelectorParser
-import org.rules.lift.{RulesDAOProvider, LiftUtils}
+import org.rules.lift.RulesDAOProvider
 import net.liftweb.util.Helpers._
 import org.rules.lift.model.RulesDAO
+import org.rules.lift.utils.LiftUtils
 import org.rules.rule.Logged
 import org.rules.rule.xml.{XMLProjectFile, XMLProject}
 

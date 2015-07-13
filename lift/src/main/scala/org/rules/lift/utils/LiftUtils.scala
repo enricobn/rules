@@ -1,13 +1,11 @@
-package org.rules.lift
+package org.rules.lift.utils
 
-import net.liftweb.common.{Box, Empty, Failure, Full}
+import net.liftweb.common.{Box, Failure, Full}
 import net.liftweb.http.S
 import net.liftweb.http.SHtml._
 import net.liftweb.http.js.JE.JsVar
 import net.liftweb.http.js.JsCmd
 import net.liftweb.http.js.JsCmds.Run
-import org.rules.lift.snippet.EditRules._
-import org.rules.lift.snippet.RulesState
 
 import scala.xml.NodeSeq
 

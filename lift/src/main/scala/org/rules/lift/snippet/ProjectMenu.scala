@@ -9,6 +9,7 @@ import net.liftweb.http.js.JsCmds._
 import net.liftweb.util.Helpers._
 import org.rules.lift._
 import org.rules.lift.model.RulesDAO
+import org.rules.lift.utils.{LiftRulesUtils, LiftUtils}
 import org.rules.rule.Logged
 import org.rules.rule.xml.{XMLModuleFile, XMLProjectFile}
 
@@ -71,7 +72,7 @@ object ProjectMenu extends RulesDAOProvider {
 
   private def updateRules() : JsCmd = {
     LiftRulesUtils.beforeContentChange(
-      SetHtml("content", EditRules.embed) &
+      SetHtml("content", RulesList.embed) &
       Run("$.ruleEditor = undefined;")
     )
   }

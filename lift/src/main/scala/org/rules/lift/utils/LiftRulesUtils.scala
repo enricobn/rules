@@ -1,8 +1,8 @@
-package org.rules.lift
+package org.rules.lift.utils
 
-import net.liftweb.http.js.JsCmds.Run
 import net.liftweb.http.js.JE.JsRaw
-import net.liftweb.http.js.{JsCmds, JsCmd}
+import net.liftweb.http.js.JsCmds.Run
+import net.liftweb.http.js.{JsCmd, JsCmds}
 
 /**
  * Created by enrico on 7/7/15.

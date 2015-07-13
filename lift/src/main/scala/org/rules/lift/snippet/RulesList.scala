@@ -12,6 +12,7 @@ import net.liftweb.json.JsonDSL._
 import net.liftweb.sitemap.*
 import net.liftweb.util.Helpers._
 import org.rules.lift._
+import org.rules.lift.utils.{LiftList, MemoizeTransformWithArg, LiftUtils}
 import LiftUtils._
 import org.rules.rule.xml.XMLRule
 
@@ -20,11 +21,45 @@ import scala.xml.NodeSeq
 /**
  * Created by enrico on 6/25/15.
  */
-object RulesList extends Loggable with RulesDAOProvider {
+object RulesList extends Loggable with RulesDAOProvider with LiftList[XMLRule] {
   private val rulesFinder = JQueryById("rules-buttons")
   private val ruleGroup: JQueryGroup = new JQueryGroup(rulesFinder, JQueryActivate)
 
-  def ruleToJson(rule: XMLRule): JValue = {
+  def embed() = {
+    val is = getClass().getResourceAsStream("/org/rules/lift/XMLRuleJSONSchema.json")
+    val schema = scala.io.Source.fromInputStream(is).getLines().mkString("\n")
+
+    <div class="lift:embed?what=/rules-list"></div> ++
+      Script(OnLoad( Run(
+        s"""
+        if (typeof $$.jsonEditor != 'undefined') {
+          $$.jsonEditor.destroy();
+        }
+
+        JSONEditor.defaults.options.theme = 'bootstrap3';
+        JSONEditor.defaults.iconlib = 'bootstrap3';
+        JSONEditor.defaults.options.disable_edit_json = true;
+        JSONEditor.defaults.options.disable_properties = true;
+        JSONEditor.defaults.options.disable_collapse = true;
+
+        $$("#detail-editor").empty();
+
+        $$("#detail-editor").hide();
+
+        $$.jsonEditor = new JSONEditor(document.getElementById("detail-editor"), $schema);
+
+        // to hide the title of the editor
+        $$( "span:contains('hide-me')" ).parent().hide();
+
+        $$.changedRules = new Object();
+        editInit($$.changedRules);
+
+        pack();
+      """
+      )))
+  }
+
+  def toJson(rule: XMLRule): JValue = {
     ("id" -> rule.id) ~
       ("name" -> rule.name) ~
       ("tags" -> rule.tags) ~
@@ -39,14 +74,12 @@ object RulesList extends Loggable with RulesDAOProvider {
       ("run" -> rule.run)
   }
 
-  def jsonToRule(json: JValue) : XMLRule = {
+  def fromJson(json: JValue) : XMLRule = {
     implicit val formats = DefaultFormats
     json.extract[XMLRule]
   }
 
   private def updateRule(rule: XMLRule): JsCmd = {
-    // for Serialization.write
-    implicit val formats = DefaultFormats
     val result = JsRaw(
       s"""
         $$.jsonEditor.disable();
@@ -55,7 +88,7 @@ object RulesList extends Loggable with RulesDAOProvider {
         if (typeof $$.changedRules.cache['${rule.id}'] != 'undefined') {
           $$.changedRules.updateEditor($$.changedRules.cache['${rule.id}']);
         } else {
-          $$.changedRules.updateEditor(${Serialization.write(ruleToJson(rule))});
+          $$.changedRules.updateEditor(${write(rule)});
         }
       """
     ) &
@@ -83,11 +116,9 @@ object RulesList extends Loggable with RulesDAOProvider {
     if (!name.isEmpty) {
       val rule = rulesDAO.createRule(RulesState.currentProjectName.get, RulesState.currentModuleName.get, name)
       val renderedRule = renderRulesVar.is.get.applyAgain(Seq(rule)) \ "_"
-      // for Serialization.write
-      implicit val formats = DefaultFormats
       Run(
         s"""
-          $$.changedRules.cache['${rule.id}'] = ${Serialization.write(ruleToJson(rule))};
+          $$.changedRules.cache['${rule.id}'] = ${write(rule)};
           $$.changedRules.changed['${rule.id}'] = '${rule.id}';
           $$('#rules-list-container').append('$renderedRule');
           ${rulesFinder.find(rule.id).toJsCmd}.trigger('click');
@@ -116,7 +147,7 @@ object RulesList extends Loggable with RulesDAOProvider {
       val rules = changedRules \ "changed" match {
         case JObject(x :: xs) =>
           val l = x :: xs
-          l.foldLeft(List.empty[XMLRule]){ (actual, field) => actual.:+(jsonToRule(field.value))}
+          l.foldLeft(List.empty[XMLRule]){ (actual, field) => actual.:+(fromJson(field.value))}
         case _ => List.empty[XMLRule]
       }
 
