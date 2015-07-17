@@ -61,7 +61,7 @@ function editChanges(container) {
 /*
 init the container for editing properties
 */
-function editInit(container, schema) {
+function editInit(container, schema, onChange) {
     if (typeof $.jsonEditor != 'undefined') {
       $.jsonEditor.destroy();
     }
@@ -90,7 +90,9 @@ function editInit(container, schema) {
     container.changeListener = function() {
      if (container.editingActive && $.jsonEditor.isEnabled()) {
        if (typeof container.activeId != 'undefined') {
-         container.cache[container.activeId] = $.jsonEditor.getValue();
+         var newValue = $.jsonEditor.getValue();
+         onChange(container.cache[container.activeId], newValue);
+         container.cache[container.activeId] = newValue;
          container.changed[container.activeId] = container.activeId;
          console.log("jsonEditor.changed");
        }

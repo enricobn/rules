@@ -72,8 +72,8 @@ case class XMLRule(id: String, name: String, tags: String, requires: Seq[XMLRequ
 
   def toRule() : Rule[String] = {
     new Rule[String] {
-      override val requires = XMLRule.this.requires.map(XMLRequirement.toRequirement(_)).toSet
-      override val provides = XMLRule.this.provides.map(_.token).toSet
+      val requires = XMLRule.this.requires.map(XMLRequirement.toRequirement(_)).toSet
+      val provides = XMLRule.this.provides.map(_.token).toSet
       override val providesTags = Tags.stringToTags(tags)
 
       def run(ui: UI, in: Map[Requirement[String],AnyRef]) : Map[String,AnyRef] = {

@@ -33,24 +33,33 @@ object RulesList extends Loggable with RulesDAOProvider with LiftList[XMLRule] {
       Script(OnLoad( Run(
         s"""
         $$.changedRules = new Object();
-        editInit($$.changedRules, $schema);
+        editInit($$.changedRules, $schema, function(oldJson, newJson) {
+          if (newJson.name != oldJson.name) {
+            ${jsonCall(JsVar("newJson"), (json : JValue) => onEditorChange(json))._2.toJsCmd}
+          }
+        });
       """
       )))
   }
 
+  private def onEditorChange(json: JValue) = {
+    val rule = fromJson(json)
+    val renderedRule = renderRulesVar.is.get.applyAgain(Seq(rule)) \ "_"
+    Run(
+      s"""
+          ${rulesFinder.find(rule.id).toJsCmd}.replaceWith('$renderedRule');
+        """
+    ) &
+    ruleGroup.select(rule.id)
+  }
+
   def toJson(rule: XMLRule): JValue = {
     ("id" -> rule.id) ~
-      ("name" -> rule.name) ~
-      ("tags" -> rule.tags) ~
-      ("requires" -> rule.requires.map { r =>
-        (("token" -> r.token) ~
-          ("tags" -> r.tags.toString))
-      }) ~
-      ("provides" -> rule.provides.map { p =>
-        (("token" -> p.token) ~
-          ("value" -> p.value))
-      }) ~
-      ("run" -> rule.run)
+    ("name" -> rule.name) ~
+    ("tags" -> rule.tags) ~
+    ("requires" -> rule.requires.map { r => ("token" -> r.token) ~ ("tags" -> r.tags.toString) }) ~
+    ("provides" -> rule.provides.map { p => ("token" -> p.token) ~ ("value" -> p.value) }) ~
+    ("run" -> rule.run)
   }
 
   def fromJson(json: JValue) : XMLRule = {
