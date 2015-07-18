@@ -69,8 +69,8 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
     val result = JsRaw(
       s"""
         var view = $$.liftViews['$viewId'];
-        $$.jsonEditor.disable();
-        $$.jsonEditor.off('change', view.changeListener);
+        view.jsonEditor.disable();
+        view.jsonEditor.off('change', view.changeListener);
         view.editingActive = false;
         if (typeof view.cache['${rule.id}'] != 'undefined') {
           view.updateEditor(view.cache['${rule.id}']);

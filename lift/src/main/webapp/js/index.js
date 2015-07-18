@@ -67,10 +67,6 @@ function editInit(viewId, schema, onChange) {
         $.liftViews = new Object();
     }
 
-    if (typeof $.jsonEditor != 'undefined') {
-      $.jsonEditor.destroy();
-    }
-
     JSONEditor.defaults.options.theme = 'bootstrap3';
     JSONEditor.defaults.iconlib = 'bootstrap3';
     JSONEditor.defaults.options.disable_edit_json = true;
@@ -80,8 +76,6 @@ function editInit(viewId, schema, onChange) {
     $("#detail-editor").empty();
 
     $("#detail-editor").hide();
-
-    $.jsonEditor = new JSONEditor(document.getElementById("detail-editor"), schema);
 
     // to hide the title of the editor
     $( "span:contains('hide-me')" ).parent().hide();
@@ -94,15 +88,16 @@ function editInit(viewId, schema, onChange) {
     view.deleted = new Array();
     view.activeId = undefined;
     view.editingActive = false;
+    view.jsonEditor = new JSONEditor(document.getElementById("detail-editor"), schema);
 
     view.changeListener = function() {
-     if (view.editingActive && $.jsonEditor.isEnabled()) {
+     if (view.editingActive && view.jsonEditor.isEnabled()) {
        if (typeof view.activeId != 'undefined') {
-         var newValue = $.jsonEditor.getValue();
+         var newValue = view.jsonEditor.getValue();
          onChange(view.cache[view.activeId], newValue);
          view.cache[view.activeId] = newValue;
          view.changed[view.activeId] = view.activeId;
-         console.log("jsonEditor.changed");
+         console.log("editor changed");
        }
      }
     };
@@ -110,12 +105,12 @@ function editInit(viewId, schema, onChange) {
     view.updateEditor = function(v) {
         console.log('updating editor');
         view.cache[v.id] = v;
-        $.jsonEditor.setValue(v);
+        view.jsonEditor.setValue(v);
         view.activeId = v.id;
         $("#detail-editor").show();
         window.requestAnimationFrame(function() {
-          $.jsonEditor.enable();
-          $.jsonEditor.on('change', view.changeListener);
+          view.jsonEditor.enable();
+          view.jsonEditor.on('change', view.changeListener);
           view.editingActive = true;
           /* to enable bootstrap's tooltip style in json editor, but it does not work! */
           $('[data-toggle="tooltip"]').tooltip();
@@ -143,6 +138,14 @@ function editAfterSave(viewId) {
     var view = $.liftViews[viewId];
     view.changed = new Object();
     view.deleted = new Array();
+}
+
+/* TODO call this */
+function editDestroy(viewId) {
+    var view = $.liftViews[viewId];
+    view.jsonEditor.off('change', view.changeListener);
+    view.jsonEditor.destroy();
+    removeContentListener(view.contentListener);
 }
 
 $(document).ready(function () {
