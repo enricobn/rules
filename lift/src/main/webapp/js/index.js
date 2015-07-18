@@ -59,13 +59,14 @@ function editChanges(viewId) {
     return result;
 }
 
-/*
-initializes the view
-viewId: String
-editorContainer; JQuery object
-schema: json schema
-onChange: function(oldJson, newJson)
-*/
+/**
+ * initializes the view
+ *
+ * @param viewId String
+ * @param editorContainer JQuery object
+ * @param schema json schema
+ * @param onChange function(oldJson, newJson)
+ */
 function editInit(viewId, editorContainer, schema, onChange) {
     if (typeof $.liftViews == 'undefined') {
         $.liftViews = new Object();
