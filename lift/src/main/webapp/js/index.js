@@ -48,20 +48,25 @@ function fireBeforeContentChange() {
 .deleted : Array of ids (string)
 .changed : Object key = id, value =
 */
-function editChanges(container) {
+function editChanges(viewId) {
+    var view = $.liftViews[viewId];
     var result = new Object();
     result.changed = new Object();
-    result.deleted = container.deleted;
-    for (var id in container.changed) {
-        result.changed[id] = container.cache[id];
+    result.deleted = view.deleted;
+    for (var id in view.changed) {
+        result.changed[id] = view.cache[id];
     }
     return result;
 }
 
 /*
-init the container for editing properties
+initializes the view
 */
-function editInit(container, schema, onChange) {
+function editInit(viewId, schema, onChange) {
+    if (typeof $.liftViews == 'undefined') {
+        $.liftViews = new Object();
+    }
+
     if (typeof $.jsonEditor != 'undefined') {
       $.jsonEditor.destroy();
     }
@@ -81,59 +86,63 @@ function editInit(container, schema, onChange) {
     // to hide the title of the editor
     $( "span:contains('hide-me')" ).parent().hide();
 
-    container.cache = new Object();
-    container.changed = new Object();
-    container.deleted = new Array();
-    container.activeId = undefined;
-    container.editingActive = false;
+    var view = new Object();
+    $.liftViews[viewId] = view;
 
-    container.changeListener = function() {
-     if (container.editingActive && $.jsonEditor.isEnabled()) {
-       if (typeof container.activeId != 'undefined') {
+    view.cache = new Object();
+    view.changed = new Object();
+    view.deleted = new Array();
+    view.activeId = undefined;
+    view.editingActive = false;
+
+    view.changeListener = function() {
+     if (view.editingActive && $.jsonEditor.isEnabled()) {
+       if (typeof view.activeId != 'undefined') {
          var newValue = $.jsonEditor.getValue();
-         onChange(container.cache[container.activeId], newValue);
-         container.cache[container.activeId] = newValue;
-         container.changed[container.activeId] = container.activeId;
+         onChange(view.cache[view.activeId], newValue);
+         view.cache[view.activeId] = newValue;
+         view.changed[view.activeId] = view.activeId;
          console.log("jsonEditor.changed");
        }
      }
     };
 
-    container.updateEditor = function(v) {
+    view.updateEditor = function(v) {
         console.log('updating editor');
-        container.cache[v.id] = v;
+        view.cache[v.id] = v;
         $.jsonEditor.setValue(v);
-        container.activeId = v.id;
+        view.activeId = v.id;
         $("#detail-editor").show();
         window.requestAnimationFrame(function() {
           $.jsonEditor.enable();
-          $.jsonEditor.on('change', container.changeListener);
-          container.editingActive = true;
+          $.jsonEditor.on('change', view.changeListener);
+          view.editingActive = true;
           /* to enable bootstrap's tooltip style in json editor, but it does not work! */
           $('[data-toggle="tooltip"]').tooltip();
         });
     };
 /*
-    container.onError = function() {
+    view.onError = function() {
         console.log("error");
         // TODO do it better
         alert("Error");
     };
 */
-    container.contentListener = new Object();
-    container.contentListener.beforeContentChange = function() {
-        if (Object.keys(container.changed).length > 0 || container.deleted.length > 0) {
+    view.contentListener = new Object();
+    view.contentListener.beforeContentChange = function() {
+        if (Object.keys(view.changed).length > 0 || view.deleted.length > 0) {
             return confirm("Do you want to loose changes?");
         } else {
            return true;
         }
     };
-   addContentListener(container.contentListener);
+   addContentListener(view.contentListener);
 }
 
-function editAfterSave(container) {
-    container.changed = new Object();
-    container.deleted = new Array();
+function editAfterSave(viewId) {
+    var view = $.liftViews[viewId];
+    view.changed = new Object();
+    view.deleted = new Array();
 }
 
 $(document).ready(function () {

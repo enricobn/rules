@@ -1,5 +1,7 @@
 package org.rules.lift.snippet
 
+import java.util.UUID
+
 import net.liftweb.common._
 import net.liftweb.http.SHtml._
 import net.liftweb.http._
@@ -12,7 +14,7 @@ import net.liftweb.json.JsonDSL._
 import net.liftweb.sitemap.*
 import net.liftweb.util.Helpers._
 import org.rules.lift._
-import org.rules.lift.utils.{LiftList, MemoizeTransformWithArg, LiftUtils}
+import org.rules.lift.utils.{LiftListView, MemoizeTransformWithArg, LiftUtils}
 import LiftUtils._
 import org.rules.rule.xml.XMLRule
 
@@ -21,7 +23,8 @@ import scala.xml.NodeSeq
 /**
  * Created by enrico on 6/25/15.
  */
-object RulesList extends Loggable with RulesDAOProvider with LiftList[XMLRule] {
+object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRule] {
+  private val viewId = UUID.randomUUID().toString
   private val rulesFinder = JQueryById("rules-buttons")
   private val ruleGroup: JQueryGroup = new JQueryGroup(rulesFinder, JQueryActivate)
 
@@ -32,8 +35,7 @@ object RulesList extends Loggable with RulesDAOProvider with LiftList[XMLRule] {
     <div class="lift:embed?what=/rules-list"></div> ++
       Script(OnLoad( Run(
         s"""
-        $$.changedRules = new Object();
-        editInit($$.changedRules, $schema, function(oldJson, newJson) {
+        editInit('$viewId', $schema, function(oldJson, newJson) {
           if (newJson.name != oldJson.name) {
             ${jsonCall(JsVar("newJson"), (json : JValue) => onEditorChange(json))._2.toJsCmd}
           }
@@ -45,12 +47,8 @@ object RulesList extends Loggable with RulesDAOProvider with LiftList[XMLRule] {
   private def onEditorChange(json: JValue) = {
     val rule = fromJson(json)
     val renderedRule = renderRulesVar.is.get.applyAgain(Seq(rule)) \ "_"
-    Run(
-      s"""
-          ${rulesFinder.find(rule.id).toJsCmd}.replaceWith('$renderedRule');
-        """
-    ) &
-    ruleGroup.select(rule.id)
+    Run(s"${rulesFinder.find(rule.id).toJsCmd}.replaceWith('$renderedRule');") &
+      ruleGroup.select(rule.id)
   }
 
   def toJson(rule: XMLRule): JValue = {
@@ -70,13 +68,14 @@ object RulesList extends Loggable with RulesDAOProvider with LiftList[XMLRule] {
   private def updateRule(rule: XMLRule): JsCmd = {
     val result = JsRaw(
       s"""
+        var view = $$.liftViews['$viewId'];
         $$.jsonEditor.disable();
-        $$.jsonEditor.off('change', $$.changedRules.changeListener);
-        $$.changedRules.editingActive = false;
-        if (typeof $$.changedRules.cache['${rule.id}'] != 'undefined') {
-          $$.changedRules.updateEditor($$.changedRules.cache['${rule.id}']);
+        $$.jsonEditor.off('change', view.changeListener);
+        view.editingActive = false;
+        if (typeof view.cache['${rule.id}'] != 'undefined') {
+          view.updateEditor(view.cache['${rule.id}']);
         } else {
-          $$.changedRules.updateEditor(${write(rule)});
+          view.updateEditor(${write(rule)});
         }
       """
     ) &
@@ -106,8 +105,9 @@ object RulesList extends Loggable with RulesDAOProvider with LiftList[XMLRule] {
       val renderedRule = renderRulesVar.is.get.applyAgain(Seq(rule)) \ "_"
       Run(
         s"""
-          $$.changedRules.cache['${rule.id}'] = ${write(rule)};
-          $$.changedRules.changed['${rule.id}'] = '${rule.id}';
+          var view = $$.liftViews['$viewId'];
+          view.cache['${rule.id}'] = ${write(rule)};
+          view.changed['${rule.id}'] = '${rule.id}';
           $$('#rules-list-container').append('$renderedRule');
           ${rulesFinder.find(rule.id).toJsCmd}.trigger('click');
         """
@@ -120,17 +120,18 @@ object RulesList extends Loggable with RulesDAOProvider with LiftList[XMLRule] {
   private def delRule =
     Run(
         s"""
-           if (typeof $$.changedRules.activeId != 'undefined') {
-              $$.changedRules.editingActive = false;
-              ${rulesFinder.find(JsRaw("$.changedRules.activeId")).toJsCmd}.hide();
-              $$.changedRules.deleted.push($$.changedRules.activeId);
+           var view = $$.liftViews['$viewId'];
+           if (typeof view.activeId != 'undefined') {
+              view.editingActive = false;
+              ${rulesFinder.find(JsRaw("view.activeId")).toJsCmd}.hide();
+              view.deleted.push(view.activeId);
               $$("#detail-editor").hide();
-              $$.changedRules.activeId = undefined;
+              view.activeId = undefined;
             }
         """)
 
   private def save =
-    SHtml.jsonCall(JsRaw("editChanges($.changedRules)"), new JsContext(Empty, Empty), (changedRules: JValue)=>{
+    SHtml.jsonCall(JsRaw(s"editChanges('$viewId')"), new JsContext(Empty, Empty), (changedRules: JValue)=>{
       println(changedRules)
       val rules = changedRules \ "changed" match {
         case JObject(x :: xs) =>
@@ -150,7 +151,7 @@ object RulesList extends Loggable with RulesDAOProvider with LiftList[XMLRule] {
         case Failure(msg, _, _) => S.error("Save error: " + msg)
         case _ => S.error("Save error")
       }
-      Run("editAfterSave($.changedRules);")
+      Run(s"editAfterSave('$viewId');")
     })._2.toJsCmd
 
   def render() = {

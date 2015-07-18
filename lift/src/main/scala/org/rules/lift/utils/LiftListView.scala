@@ -6,7 +6,7 @@ import net.liftweb.json.JsonAST.JValue
 /**
  * Created by enrico on 7/13/15.
  */
-trait LiftList[T] {
+trait LiftListView[T] {
   def toJson(value: T): JValue
   def fromJson(value: JValue): T
 
