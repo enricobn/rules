@@ -35,7 +35,7 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
     <div class="lift:embed?what=/rules-list"></div> ++
       Script(OnLoad( Run(
         s"""
-        editInit('$viewId', $schema, function(oldJson, newJson) {
+        editInit('$viewId', $$("#detail-editor"), $schema, function(oldJson, newJson) {
           if (newJson.name != oldJson.name) {
             ${jsonCall(JsVar("newJson"), (json : JValue) => onEditorChange(json))._2.toJsCmd}
           }

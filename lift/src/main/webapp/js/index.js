@@ -61,8 +61,12 @@ function editChanges(viewId) {
 
 /*
 initializes the view
+viewId: String
+editorContainer; JQuery object
+schema: json schema
+onChange: function(oldJson, newJson)
 */
-function editInit(viewId, schema, onChange) {
+function editInit(viewId, editorContainer, schema, onChange) {
     if (typeof $.liftViews == 'undefined') {
         $.liftViews = new Object();
     }
@@ -73,9 +77,9 @@ function editInit(viewId, schema, onChange) {
     JSONEditor.defaults.options.disable_properties = true;
     JSONEditor.defaults.options.disable_collapse = true;
 
-    $("#detail-editor").empty();
+    editorContainer.empty();
 
-    $("#detail-editor").hide();
+    editorContainer.hide();
 
     // to hide the title of the editor
     $( "span:contains('hide-me')" ).parent().hide();
@@ -92,7 +96,8 @@ function editInit(viewId, schema, onChange) {
     view.deleted = new Array();
     view.activeId = undefined;
     view.editingActive = false;
-    view.jsonEditor = new JSONEditor(document.getElementById("detail-editor"), schema);
+    /* [0] since editorContainer comes from JQuery so its a jQuery Object, but JSONEditor needs an HTML DOM Object */
+    view.jsonEditor = new JSONEditor(editorContainer[0], schema);
 
     view.changeListener = function() {
      if (view.editingActive && view.jsonEditor.isEnabled()) {
@@ -111,7 +116,7 @@ function editInit(viewId, schema, onChange) {
         view.cache[v.id] = v;
         view.jsonEditor.setValue(v);
         view.activeId = v.id;
-        $("#detail-editor").show();
+        editorContainer.show();
         window.requestAnimationFrame(function() {
           view.jsonEditor.enable();
           view.jsonEditor.on('change', view.changeListener);
