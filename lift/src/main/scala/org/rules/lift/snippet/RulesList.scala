@@ -24,29 +24,29 @@ import scala.xml.NodeSeq
  * Created by enrico on 6/25/15.
  */
 object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRule] {
-  private val viewId = UUID.randomUUID().toString
   private val rulesFinder = JQueryById("rules-buttons")
   private val ruleGroup: JQueryGroup = new JQueryGroup(rulesFinder, JQueryActivate)
 
-  def embed() = {
+  def embed = {
+    val viewId = UUID.randomUUID().toString
     val is = getClass().getResourceAsStream("/org/rules/lift/XMLRuleJSONSchema.json")
     val schema = scala.io.Source.fromInputStream(is).getLines().mkString("\n")
 
-    <div class="lift:embed?what=/rules-list"></div> ++
+    <lift:embed what="/rules-list" viewId={viewId}></lift:embed> ++
       Script(OnLoad( Run(
         s"""
         editInit('$viewId', $$("#detail-editor"), $schema, function(oldJson, newJson) {
           if (newJson.name != oldJson.name) {
-            ${jsonCall(JsVar("newJson"), (json : JValue) => onEditorChange(json))._2.toJsCmd}
+            ${jsonCall(JsVar("newJson"), (json : JValue) => onEditorChange(viewId, json))._2.toJsCmd}
           }
         });
       """
       )))
   }
 
-  private def onEditorChange(json: JValue) = {
+  private def onEditorChange(viewId: String, json: JValue) = {
     val rule = fromJson(json)
-    val renderedRule = renderRulesVar.is.get.applyAgain(Seq(rule)) \ "_"
+    val renderedRule = renderRulesVar.is.get.applyAgain((viewId, Seq(rule))) \ "_"
     Run(s"${rulesFinder.find(rule.id).toJsCmd}.replaceWith('$renderedRule');") &
       ruleGroup.select(rule.id)
   }
@@ -65,7 +65,7 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
     json.extract[XMLRule]
   }
 
-  private def updateRule(rule: XMLRule): JsCmd = {
+  private def updateRule(viewId: String, rule: XMLRule): JsCmd = {
     val result = JsRaw(
       s"""
         var view = $$.liftViews['$viewId'];
@@ -87,22 +87,22 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
     result
   }
 
-  private def renderRules(rules: Seq[XMLRule]) : NodeSeq => NodeSeq = {
-      "#rules-list-elements *" #> rules.map { rule =>
-        ".select-rule [onClick]" #> ajaxInvoke(() => updateRule(rule)) &
+  private def renderRules(rules : (String, Seq[XMLRule])) : NodeSeq => NodeSeq = {
+      "#rules-list-elements *" #> rules._2.map { rule =>
+        ".select-rule [onClick]" #> ajaxInvoke(() => updateRule(rules._1, rule)) &
           ".select-rule [id]" #> rulesFinder.getDOMId(rule.id) &
           ".select-rule *" #> rule.name
       }
   }
 
-  private object renderRulesVar extends RequestVar[Option[MemoizeTransformWithArg[Seq[XMLRule]]]](None)
+  private object renderRulesVar extends RequestVar[Option[MemoizeTransformWithArg[(String,Seq[XMLRule])]]](None)
 
-  private def addRule = LiftUtils.bootboxPrompt("Rule name", addRuleByName)
+  private def addRule(viewId: String) = LiftUtils.bootboxPrompt("Rule name", addRuleByName(viewId))
 
-  private def addRuleByName(name: String) = {
+  private def addRuleByName(viewId: String)(name: String) = {
     if (!name.isEmpty) {
       val rule = rulesDAO.createRule(RulesState.currentProjectName.get, RulesState.currentModuleName.get, name)
-      val renderedRule = renderRulesVar.is.get.applyAgain(Seq(rule)) \ "_"
+      val renderedRule = renderRulesVar.is.get.applyAgain((viewId, Seq(rule))) \ "_"
       Run(
         s"""
           var view = $$.liftViews['$viewId'];
@@ -117,7 +117,7 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
     }
   }
 
-  private def delRule =
+  private def delRule(viewId: String) =
     Run(
         s"""
            var view = $$.liftViews['$viewId'];
@@ -130,7 +130,7 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
             }
         """)
 
-  private def save =
+  private def save(viewId: String) =
     SHtml.jsonCall(JsRaw(s"editChanges('$viewId')"), new JsContext(Empty, Empty), (changedRules: JValue)=>{
       println(changedRules)
       val rules = changedRules \ "changed" match {
@@ -155,19 +155,20 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
     })._2.toJsCmd
 
   def render() = {
+    val viewId : String = S.attr("viewId").openOrThrowException("cannot find attribute viewId!")
     RulesState.resetCurrentRuleId
     val rules : Seq[XMLRule] =
       rulesDAO.getRules(RulesState.currentProjectName.get, RulesState.currentModuleName.get).get
 
-    renderRulesVar.set(Some(memoizeWithArg(renderRules, rules)))
+    renderRulesVar.set(Some(memoizeWithArg(renderRules, (viewId, rules))))
 
     S.appendJs(Run("""$('[data-toggle="tooltip"]').tooltip();"""))
 
     "#rules-list-container *" #> renderRulesVar.is.get &
     "#rules-list-title *" #> (RulesState.currentModuleName.get + " rules") &
-    "#add-rule [onClick]" #> addRule &
-    "#del-rule [onClick]" #> delRule &
-    "#rules-save [onclick]" #> save
+    "#add-rule [onClick]" #> addRule(viewId) &
+    "#del-rule [onClick]" #> delRule(viewId) &
+    "#rules-save [onclick]" #> save(viewId)
   }
 
 }

@@ -1,5 +1,7 @@
 package org.rules.lift.snippet
 
+import java.util.UUID
+
 import net.liftweb.common.Full
 import net.liftweb.http.js.JE.JsVar
 import net.liftweb.http.js.JsCmd
