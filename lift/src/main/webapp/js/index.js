@@ -80,7 +80,11 @@ function editInit(viewId, schema, onChange) {
     // to hide the title of the editor
     $( "span:contains('hide-me')" ).parent().hide();
 
-    var view = new Object();
+    var view = $.liftViews[viewId];
+    if (typeof view != 'undefined') {
+        editDestroy(viewId);
+    }
+    view = new Object();
     $.liftViews[viewId] = view;
 
     view.cache = new Object();
@@ -142,6 +146,7 @@ function editAfterSave(viewId) {
 
 /* TODO call this */
 function editDestroy(viewId) {
+    console.log('editDestroy ' + viewId);
     var view = $.liftViews[viewId];
     view.jsonEditor.off('change', view.changeListener);
     view.jsonEditor.destroy();
