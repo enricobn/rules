@@ -3,33 +3,32 @@ package org.rules.lift.snippet
 import java.util.UUID
 
 import net.liftweb.common.Full
-import net.liftweb.http.js.JE.JsVar
 import net.liftweb.http.js.JsCmd
-import net.liftweb.http.{S, MemoizeTransform, RequestVar, SHtml}
+import net.liftweb.http._
 import net.liftweb.http.SHtml._
 import net.liftweb.http.js.JsCmds._
 import net.liftweb.util.Helpers._
 import org.rules.lift._
-import org.rules.lift.model.RulesDAO
-import org.rules.lift.utils.{LiftRulesUtils, LiftUtils}
-import org.rules.rule.Logged
-import org.rules.rule.xml.{XMLModuleFile, XMLProjectFile}
+import org.rules.lift.utils.{MemoizeTransformWithArg, LiftRulesUtils, LiftUtils}
 
-import scala.xml.Text
+private case class Parameters(layoutContentId: String, listContainerId: String, projectName: String)
 
 /**
  * Created by enrico on 6/22/15.
  * project-menu.html
  */
-object ProjectMenu extends RulesDAOProvider {
+class ProjectMenu extends RulesDAOProvider {
   private val modulesFinder = JQueryById("modules-buttons")
   private val moduleGroup : JQueryGroup = new JQueryGroup(modulesFinder, JQueryHide)
 
-  // TODO error check
-  private def modules = rulesDAO.getModules(RulesState.currentProjectName.get).getOrElse(Seq.empty)
 
-  private def updateModule(name: String) = {
-    val deselect = RulesState.currentModuleName match {
+  //println("Constructor " + S.attr("projectName").openOrThrowException("cannot find attribute projectName!"))
+
+  // TODO error check
+  private def modules(projectName: String) = rulesDAO.getModules(projectName).getOrElse(Seq.empty)
+
+  private def updateModule(parameters: Parameters, name: String) = {
+/*    val deselect = RulesState.currentModuleName match {
       case Some(module) => moduleGroup.deSelect(module)
       case _ => Noop
     }
@@ -41,32 +40,35 @@ object ProjectMenu extends RulesDAOProvider {
       moduleGroup.select(name) &
       Run("pack();")
     //Run(js)
+    */
+    println("update module " + name + " parameters " + parameters)
+    Noop
   }
 
-  private def addModuleCall(name: String) = {
+  private def addModuleCall(parameters: Parameters)(name: String) = {
     if (!name.isEmpty) {
       // TODO check errors
-      rulesDAO.createModule(RulesState.currentProjectName.get, name)
+      rulesDAO.createModule(parameters.projectName, name)
 
       //Index.projectVar.set(Some(newProject))
 
-      SetHtml("modules-list-container", renderModulesVar.is.get.applyAgain()) &
-      Run("pack();")
+      SetHtml(parameters.listContainerId, renderModulesVar.is.get.applyAgain(parameters)) &
+        Run("pack();")
     } else {
       Noop
     }
   }
 
-  private def addModule() = {
-    LiftUtils.bootboxPrompt("Module name", addModuleCall)
+  private def addModule(parameters: Parameters) = {
+    LiftUtils.bootboxPrompt("Module name", addModuleCall(parameters))
   }
 
-  private def delModule(id: String) = {
+  private def delModule(parameters: Parameters, id: String) = {
     (for {
-      newProject <- rulesDAO.delModule(RulesState.currentProjectName.get, id)
+      newProject <- rulesDAO.delModule(parameters.projectName, id)
       result <- Full(
         RulesState.moduleDeleted(id) &
-        SetHtml("modules-list-container", renderModulesVar.is.get.applyAgain()) &
+        SetHtml(parameters.listContainerId, renderModulesVar.is.get.applyAgain(parameters)) &
         Run("pack();")
       )
     } yield result).getOrElse(Noop)
@@ -79,27 +81,35 @@ object ProjectMenu extends RulesDAOProvider {
     )
   }
 
-
-  private val renderModules = SHtml.memoize(
-    "#modules-list *" #> modules.map(module =>
-      ".select-module [onClick]" #> ajaxInvoke(() => updateModule(module.name)) &
-      ".select-module *" #> module.name &
+  private def renderModules(parameters : Parameters) =
+    ".list *" #> modules(parameters.projectName).map(module =>
+      ".select-item [onClick]" #> ajaxInvoke(() => updateModule(parameters, module.name)) &
+      ".select-item *" #> module.name &
       ".list-rules [onClick]" #> ajaxInvoke(() => updateRules()) &
       ".modules-buttons [id]" #> modulesFinder.getDOMId(module.name) &
       ".modules-buttons [style+]" #> "display: none;" &
-      ".del-module [onClick]" #> LiftUtils.bootboxConfirm(s"Are you sure to delete module ${module.name}?",
-          () => delModule(module.name))
-    )
+      ".del-from-list [onClick]" #> LiftUtils.bootboxConfirm(s"Are you sure to delete module ${module.name}?",
+          () => delModule(parameters, module.name))
   )
 
-  private object renderModulesVar extends RequestVar[Option[MemoizeTransform]](None)
+  // argument is listContainerId,projectName
+  private object renderModulesVar extends RequestVar[Option[MemoizeTransformWithArg[Parameters]]](None)
 
   def render = {
-    renderModulesVar.set(Some(renderModules))
-    S.appendJs(Run("""$('[data-toggle="tooltip"]').tooltip();"""))
+    val parameters = Parameters(UUID.randomUUID().toString, UUID.randomUUID().toString,
+      S.attr("projectName").openOrThrowException("cannot find attribute projectName!!!"))
 
-    "#modules-list-container *" #> renderModules &
-    "#project-name *" #> RulesState.currentProjectName.get &
-    "#add-module [onClick]" #> addModule()
+    renderModulesVar.set(Some(LiftUtils.memoizeWithArg(renderModules, parameters)))
+    S.appendJs(Run(
+      s"""
+        $$('[data-toggle="tooltip"]').tooltip();
+        var layout = $$('#${parameters.layoutContentId}').layout({ applyDefaultStyles: false, west__size: "auto" });
+        layout.resizeAll();
+      """.stripMargin))
+
+    ".list-container *" #> renderModulesVar.is.get &
+    ".list-container [id]" #> parameters.listContainerId &
+    ".add-to-list [onClick]" #> addModule(parameters) &
+    ".layout-content [id]" #> parameters.layoutContentId
   }
 }

@@ -1,10 +1,9 @@
 package bootstrap.liftweb
 
-import net.liftweb.common.Loggable
+import net.liftweb.common.{Logger, Empty, Loggable, Full}
 import net.liftweb.http.js.{JsCmds, JsCmd}
 import net.liftweb.http._
 import net.liftweb.sitemap.{Menu, SiteMap}
-import net.liftweb.common.Full
 import net.liftweb.util.Helpers._
 import org.rules.lift.RulesInjector
 import org.rules.lift.model.{RulesDAO, RulesXMLFileDAO}
@@ -71,6 +70,8 @@ class Boot extends Loggable  {
 */
     LiftRules.noticesAutoFadeOut.default.set(
       (notices: NoticeType.Value) =>Full(2 seconds, 2 seconds))
+
+    //Logger.setup = Empty
 
   }
 }

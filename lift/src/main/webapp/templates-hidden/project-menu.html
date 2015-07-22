@@ -17,22 +17,26 @@
     </script>
 </head>
 <body class="lift:content_id=real_content">
-    <div id="real_content" class="lift:ProjectMenu.render">
-        <h4 id="project-name" style="margin-left: 10px; margin-right: 10px;">Project name</h4>
-        <div id="modules-list-container">
-            <div id="modules-list">
-                <div class="del-module btn btn-primary btn-xs lt-margin glyphicon glyphicon-remove"
-                     data-toggle="tooltip" title="Delete"></div>
-                <div class="select-module btn btn-primary rules-nav">module</div>
-                <div class="modules-buttons">
-                    <div class="list-rules btn btn-info rules-nav" style="margin-left: 20px;">Rules</div>
-                    <br/>
-                    <div class="list-factories btn btn-info rules-nav" style="margin-left: 20px;">Factories</div>
+    <div id="real_content" class="lift:ProjectMenu.render" style="height: 100%;">
+        <div class="layout-content" style="height: 100%;">
+            <div class="bg1 ui-layout-west" style="height: 100%; overflow: auto;">
+                <div class="list-container">
+                    <div class="list">
+                        <div class="del-from-list btn btn-primary btn-xs lt-margin glyphicon glyphicon-remove"
+                             data-toggle="tooltip" title="Delete"></div>
+                        <div class="select-item btn btn-primary rules-nav">module</div>
+                        <div class="modules-buttons">
+                            <div class="list-rules btn btn-info rules-nav" style="margin-left: 20px;">Rules</div>
+                            <br/>
+                            <div class="list-factories btn btn-info rules-nav" style="margin-left: 20px;">Factories</div>
+                        </div>
+                    </div>
                 </div>
+                <div class="btn btn-primary btn-xs glyphicon glyphicon-plus rules-nav add-to-list"
+                     data-toggle="tooltip" title="Add"></div>
             </div>
+            <div class="ui-layout-center project-tabs">TABS</div>
         </div>
-        <div class="btn btn-primary btn-xs glyphicon glyphicon-plus rules-nav" id="add-module"
-             data-toggle="tooltip" title="Add"></div>
     </div>
 </body>
 </html>

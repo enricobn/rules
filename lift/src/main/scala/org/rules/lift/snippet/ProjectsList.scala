@@ -1,6 +1,7 @@
 package org.rules.lift.snippet
 
 import java.io.File
+import java.util.UUID
 
 import net.liftweb.common.Loggable
 import net.liftweb.http.SHtml._
@@ -12,7 +13,7 @@ import net.liftweb.util.CssSelectorParser
 import org.rules.lift.RulesDAOProvider
 import net.liftweb.util.Helpers._
 import org.rules.lift.model.RulesDAO
-import org.rules.lift.utils.LiftUtils
+import org.rules.lift.utils.{JQueryTabs, LiftUtils}
 import org.rules.rule.Logged
 import org.rules.rule.xml.{XMLProjectFile, XMLProject}
 
@@ -21,16 +22,15 @@ import scala.xml.{NodeSeq, Text}
 /**
  * Created by enrico on 6/25/15.
  */
-object ProjectsList extends Loggable with RulesDAOProvider {
-  
+object ProjectsList extends Loggable with RulesDAOProvider with JQueryTabs {
+
   private def updateProjectMenu(projectName: String) : JsCmd = {
+    //val newTabId = UUID.randomUUID().toString
     LiftUtils.getOrElseError[XMLProject,JsCmd](
       rulesDAO.getProject(projectName),
       (project) => {
         RulesState.setCurrentProjectName(project.name)
-        SetHtml("project-menu", <span class="lift:embed?what=/project-menu" />) &
-        SetHtml("content", Text("")) &
-        Run("pack();")
+        addTab("projects-tabs", projectName, <lift:embed what="/project-menu" projectName={projectName}/>)
       },
       s"""Failed to load project "$projectName"""",
       Noop)
@@ -72,7 +72,9 @@ object ProjectsList extends Loggable with RulesDAOProvider {
 
   def render() = {
     renderProjectsVar.set(Some(renderProjects))
-    S.appendJs(Run("""$('[data-toggle="tooltip"]').tooltip();"""))
+    S.appendJs(Run("""$('[data-toggle="tooltip"]').tooltip();""") &
+      createTabs("content", "projects-tabs")
+    )
 
     "#projects-list-container *" #> renderProjects &
     "#add-project [onClick]" #> addProject()
