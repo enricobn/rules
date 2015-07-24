@@ -15,7 +15,8 @@ trait JQueryTabs {
     Run(
       s"""
         console.log("addTab($tabContainerId,$newTabId)");
-        $$( "div#$tabContainerId ul" ).append(
+        /* I must use > ul since I want direct children, not all (nested tabs)*/
+        $$( "div#$tabContainerId > ul" ).append(
           "<li><a href='#$newTabId'>$name</a><span class='ui-icon ui-icon-close' role='presentation'>Remove Tab</span></li>"
         );
         $$( "div#$tabContainerId" ).append(
@@ -25,7 +26,8 @@ trait JQueryTabs {
       SetHtml(newTabId, content) &
       Run(
         s"""
-          var last = $$('div#$tabContainerId >ul li:last').index()
+          /* I must use > ul since I want direct children, not all (nested tabs)*/
+          var last = $$('div#$tabContainerId > ul li:last').index()
           console.log("last " + last);
           $$( "div#$tabContainerId" ).tabs( "refresh" );
           $$( "div#$tabContainerId" ).tabs({active: last});
