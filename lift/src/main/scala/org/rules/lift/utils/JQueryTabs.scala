@@ -14,18 +14,22 @@ trait JQueryTabs {
     val newTabId = UUID.randomUUID().toString
     Run(
       s"""
-        var tabs =  $$( "#$tabContainerId" ).tabs();
-        var ul = tabs.find( "ul" );
-        $$("<li><a href='#$newTabId'>$name</a><span class='ui-icon ui-icon-close' role='presentation'>Remove Tab</span></li>").appendTo(ul);
-        $$( "<div id='$newTabId' style='height: 100%;'></div>" ).appendTo( tabs );
+        console.log("addTab($tabContainerId,$newTabId)");
+        $$( "div#$tabContainerId ul" ).append(
+          "<li><a href='#$newTabId'>$name</a><span class='ui-icon ui-icon-close' role='presentation'>Remove Tab</span></li>"
+        );
+        $$( "div#$tabContainerId" ).append(
+          "<div id='$newTabId' style='height: 100%;'></div>"
+        );
       """.stripMargin) &
       SetHtml(newTabId, content) &
       Run(
         s"""
-          tabs.tabs( 'refresh' );
-          var last = $$('#$tabContainerId .ui-tabs-nav li:last').index();
-          tabs.tabs({active: last});
-          tabs.show();
+          var last = $$('div#$tabContainerId >ul li:last').index()
+          console.log("last " + last);
+          $$( "div#$tabContainerId" ).tabs( "refresh" );
+          $$( "div#$tabContainerId" ).tabs({active: last});
+          $$( "div#$tabContainerId" ).show();
         """.stripMargin)
   }
 
@@ -36,18 +40,18 @@ trait JQueryTabs {
       </div>) &
       Run(
         s"""
-        // close icon: removing the tab on click
-        var tabs = $$( "#$tabContainerId" ).tabs();
-        tabs.delegate( "span.ui-icon-close", "click", function() {
-          var panelId = $$( this ).closest( "li" ).remove().attr( "aria-controls" );
-          $$( "#" + panelId ).remove();
-          tabs.tabs( "refresh" );
-          var tabCount = $$('#$tabContainerId >ul >li').size();
-          if (tabCount == 0) {
-            tabs.hide();
-          }
-        });
-        tabs.hide();
-        """
+          var tabs = $$( "#$tabContainerId" ).tabs();
+          // close icon: removing the tab on click
+          tabs.delegate( "span.ui-icon-close", "click", function() {
+            var panelId = $$( this ).closest( "li" ).remove().attr( "aria-controls" );
+            $$( "#" + panelId ).remove();
+            tabs.tabs( "refresh" );
+            var tabCount = $$('#$tabContainerId >ul >li').size();
+            if (tabCount == 0) {
+              $$( "#$tabContainerId" ).hide();
+            }
+          });
+          $$( "#$tabContainerId" ).hide();
+        """.stripMargin
       )
 }

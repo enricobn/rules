@@ -1,9 +1,6 @@
 package org.rules.lift.model
 
-import java.io.File
-
 import net.liftweb.common.Box
-import org.rules.rule.Logged
 import org.rules.rule.xml._
 
 /**
