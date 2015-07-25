@@ -27,10 +27,10 @@ import scala.xml.NodeSeq
 
 object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRule] {
 
-  private case class RulesListState(projectName: String, moduleName: String, viewId: String, itemsFinder: JQueryById,
-                            itemsGroup: JsGroup)
+  private case class RenderArgs(itemsFinder: JQueryById, itemsGroup: JsGroup, viewId: String, items: Seq[XMLRule])
 
-  private case class RenderArgs(itemsFinder: JQueryById, viewID: String, items: Seq[XMLRule])
+  private case class RulesListState(projectName: String, moduleName: String, viewId: String, itemsFinder: JQueryById,
+                                    itemsGroup: JsGroup)
 
   def embed(projectName: String, moduleName: String) = {
     val viewId = UUID.randomUUID().toString
@@ -40,7 +40,8 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
 
   private def onEditorChange(state: RulesListState, json: JValue) = {
     val rule = fromJson(json)
-    val renderedRule = renderRulesVar.is.get.applyAgain(RenderArgs(state.itemsFinder, state.viewId, Seq(rule))) \ "_"
+    val renderedRule = renderRulesVar.is.get.applyAgain(RenderArgs(state.itemsFinder, state.itemsGroup,
+      state.viewId, Seq(rule))) \ "_"
     Run(s"${state.itemsFinder.find(rule.id).toJsCmd}.replaceWith('$renderedRule');") &
       state.itemsGroup.select(rule.id)
   }
@@ -59,8 +60,8 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
     jsonItem.extract[XMLRule]
   }
 
-  private def updateRule(viewId: String, rule: XMLRule): JsCmd = {
-    val result = JsRaw(
+  private def updateRule(oldId: String, viewId: String, itemsGroup: JsGroup, rule: XMLRule): JsCmd = {
+    JsRaw(
       s"""
         var view = $$.liftViews['$viewId'];
         view.jsonEditor.disable();
@@ -71,19 +72,18 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
         } else {
           view.updateEditor(${write(rule)});
         }
-      """
-    ) /*&
-    RulesState.currentRuleId.map(ruleGroup.deSelect(_)).getOrElse(Noop) &
-      ruleGroup.select(rule.id)
-
-    RulesState.setCurrentRuleId(rule.id)*/
-
-    result
+        if ('$oldId' != 'undefined') {
+          ${itemsGroup.deSelect(oldId).toJsCmd}
+        }
+        ${itemsGroup.select(rule.id).toJsCmd}
+      """.stripMargin
+    )
   }
 
   private def renderRules(arg: RenderArgs) : NodeSeq => NodeSeq = {
       ".list-elements *" #> arg.items.map { rule =>
-        ".select-item [onClick]" #> ajaxInvoke(() => updateRule(arg.viewID, rule)) &
+        ".select-item [onClick]" #> ajaxCall(JsRaw(s"""$$.liftViews["${arg.viewId}"].activeId"""),
+            (oldId) => updateRule(oldId, arg.viewId, arg.itemsGroup, rule)) &
           ".select-item [id]" #> arg.itemsFinder.getDOMId(rule.id) &
           ".select-item *" #> rule.name
       }
@@ -97,13 +97,14 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
   private def addRuleByName(state: RulesListState)(name: String) = {
     if (!name.isEmpty) {
       val rule = rulesDAO.createRule(state.projectName, state.moduleName, name)
-      val renderedRule = renderRulesVar.is.get.applyAgain(RenderArgs(state.itemsFinder, state.viewId, Seq(rule))) \ "_"
+      val renderedRule = renderRulesVar.is.get.applyAgain(RenderArgs(state.itemsFinder,
+        state.itemsGroup, state.viewId, Seq(rule))) \ "_"
       Run(
         s"""
           var view = $$.liftViews['${state.viewId}'];
           view.cache['${rule.id}'] = ${write(rule)};
           view.changed['${rule.id}'] = '${rule.id}';
-          $$('#${state.viewId} .list-container').append('$renderedRule');
+          $$('#${state.viewId} .list-container').append(${encJs(renderedRule.toString)});
           ${state.itemsFinder.find(rule.id).toJsCmd}.trigger('click');
         """
       )
@@ -158,11 +159,10 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
 
     val state = RulesListState(projectName, moduleName, viewId, itemsFinder, itemsGroup)
 
-    RulesState.resetCurrentRuleId
     val rules : Seq[XMLRule] =
       rulesDAO.getRules(projectName, moduleName).openOrThrowException("Error getting rules.")
 
-    renderRulesVar.set(Some(memoizeWithArg(renderRules, RenderArgs(itemsFinder, viewId, rules))))
+    renderRulesVar.set(Some(memoizeWithArg(renderRules, RenderArgs(itemsFinder, itemsGroup, viewId, rules))))
 
     val is = getClass().getResourceAsStream("/org/rules/lift/XMLRuleJSONSchema.json")
     val schema = scala.io.Source.fromInputStream(is).getLines().mkString("\n")

@@ -28,10 +28,7 @@ object ProjectsList extends Loggable with RulesDAOProvider with JQueryTabs {
     //val newTabId = UUID.randomUUID().toString
     LiftUtils.getOrElseError[XMLProject,JsCmd](
       rulesDAO.getProject(projectName),
-      (project) => {
-        RulesState.setCurrentProjectName(project.name)
-        addTab("projects-tabs", projectName, <lift:embed what="/project-menu" projectName={projectName}/>)
-      },
+      (project) => addTab("projects-tabs", projectName, <lift:embed what="/project-menu" projectName={projectName}/>),
       s"""Failed to load project "$projectName"""",
       Noop)
   }
