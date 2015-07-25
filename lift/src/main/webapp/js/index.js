@@ -82,9 +82,6 @@ function editInit(viewId, editorContainer, schema, onChange) {
 
     editorContainer.hide();
 
-    // to hide the title of the editor
-    $( "span:contains('hide-me')" ).parent().hide();
-
     var view = $.liftViews[viewId];
     if (typeof view != 'undefined') {
         editDestroy(viewId);
@@ -99,6 +96,9 @@ function editInit(viewId, editorContainer, schema, onChange) {
     view.editingActive = false;
     /* [0] since editorContainer comes from JQuery so its a jQuery Object, but JSONEditor needs an HTML DOM Object */
     view.jsonEditor = new JSONEditor(editorContainer[0], schema);
+
+    // to hide the title of the editor
+    $( "#" + viewId + " span:contains('hide-me')" ).parent().hide();
 
     view.changeListener = function() {
      if (view.editingActive && view.jsonEditor.isEnabled()) {

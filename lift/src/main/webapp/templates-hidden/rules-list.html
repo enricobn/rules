@@ -20,30 +20,31 @@
 <body class="lift:content_id=rules_list_real_content">
     <!-- TODO I don't like the 100% here, I would like to put it in the embedding code, but I don't know how!!! -->
     <div id="rules_list_real_content" class="lift:RulesList.render"  style="height: 100%;">
-        <div class="bg2" style="height: 5%;">
-            <div id="rules-save"
-                 class="btn btn-primary glyphicon glyphicon-floppy-save"
-                 style="margin-left: 10px; margin-top: 5px; float: left;"
-                 data-toggle="tooltip" title="Save"></div>
-            <div id="add-rule" class="btn btn-primary btn-xs glyphicon glyphicon-plus"
-                 data-toggle="tooltip" title="Add"
-                 style="margin-left: 10px; margin-top: 5px; float: left;"></div>
-            <div id="del-rule" class="btn btn-primary btn-xs glyphicon glyphicon-remove"
-                 data-toggle="tooltip" title="Delete"
-                 style="margin-left: 10px; margin-top: 5px; float: left;"></div>
-        </div>
+        <div class="list-main-container" style="height: 100%;">
+            <div class="bg2" style="min-height: 50px;">
+                <div class="btn btn-primary glyphicon glyphicon-floppy-save save-items"
+                     style="margin-left: 10px; margin-top: 5px; float: left;"
+                     data-toggle="tooltip" title="Save"></div>
+                <div class="btn btn-primary btn-xs glyphicon glyphicon-plus add-item"
+                     data-toggle="tooltip" title="Add"
+                     style="margin-left: 10px; margin-top: 5px; float: left;"></div>
+                <div class="btn btn-primary btn-xs glyphicon glyphicon-remove del-item"
+                     data-toggle="tooltip" title="Delete"
+                     style="margin-left: 10px; margin-top: 5px; float: left;"></div>
+            </div>
 
-        <div class="clear: left; border-bg1 bg3" style="height: 30%; overflow: auto">
-            <!--h3 style="margin-left: 10px; margin-right: 10px;">Projects</h3-->
-            <div id="rules-list-container">
-                <div id="rules-list-elements">
-                    <div class="select-rule btn btn-primary rules-nav" style="float: left;">rule</div>
+            <div class="clear: left; border-bg1 bg3" style="height: 30%; overflow: auto">
+                <!--h3 style="margin-left: 10px; margin-right: 10px;">Projects</h3-->
+                <div class="list-container">
+                    <div class="list-elements">
+                        <div class="select-item btn btn-primary rules-nav" style="float: left;">rule</div>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div id="detail" class="border-bg1 bg3" style="height: 65%; overflow: auto; margin-bottom: 10px; clear: left;">
-            <div id="detail-editor" style="margin-left: 10px; margin-right: 10px; margin-top: 10px;">detail editor</div>
+            <div class="border-bg1 bg3" style="height: 70%; overflow: auto; margin-bottom: 10px; clear: left;">
+                <div class="detail-editor" style="margin-left: 10px; margin-right: 10px; margin-top: 10px;">detail editor</div>
+            </div>
         </div>
     </div>
 </body>

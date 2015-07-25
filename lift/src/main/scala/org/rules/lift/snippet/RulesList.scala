@@ -35,7 +35,7 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
     <lift:embed what="/rules-list" viewId={viewId} projectName={projectName} moduleName={moduleName}></lift:embed> ++
       Script(OnLoad( Run(
         s"""
-        editInit('$viewId', $$("#detail-editor"), $schema, function(oldJson, newJson) {
+        editInit('$viewId', $$("#$viewId .detail-editor"), $schema, function(oldJson, newJson) {
           if (newJson.name != oldJson.name) {
             ${jsonCall(JsVar("newJson"), (json : JValue) => onEditorChange(viewId, json))._2.toJsCmd}
           }
@@ -78,20 +78,20 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
           view.updateEditor(${write(rule)});
         }
       """
-    ) &
+    ) /*&
     RulesState.currentRuleId.map(ruleGroup.deSelect(_)).getOrElse(Noop) &
       ruleGroup.select(rule.id)
 
-    RulesState.setCurrentRuleId(rule.id)
+    RulesState.setCurrentRuleId(rule.id)*/
 
     result
   }
 
   private def renderRules(rules : (String, Seq[XMLRule])) : NodeSeq => NodeSeq = {
-      "#rules-list-elements *" #> rules._2.map { rule =>
-        ".select-rule [onClick]" #> ajaxInvoke(() => updateRule(rules._1, rule)) &
-          ".select-rule [id]" #> rulesFinder.getDOMId(rule.id) &
-          ".select-rule *" #> rule.name
+      ".list-elements *" #> rules._2.map { rule =>
+        ".select-item [onClick]" #> ajaxInvoke(() => updateRule(rules._1, rule)) &
+          ".select-item [id]" #> rulesFinder.getDOMId(rule.id) &
+          ".select-item *" #> rule.name
       }
   }
 
@@ -109,7 +109,7 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
           var view = $$.liftViews['$viewId'];
           view.cache['${rule.id}'] = ${write(rule)};
           view.changed['${rule.id}'] = '${rule.id}';
-          $$('#rules-list-container').append('$renderedRule');
+          $$('#$viewId .list-container').append('$renderedRule');
           ${rulesFinder.find(rule.id).toJsCmd}.trigger('click');
         """
       )
@@ -126,7 +126,7 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
               view.editingActive = false;
               ${rulesFinder.find(JsRaw("view.activeId")).toJsCmd}.hide();
               view.deleted.push(view.activeId);
-              $$("#detail-editor").hide();
+              $$("#$viewId .detail-editor").hide();
               view.activeId = undefined;
             }
         """)
@@ -167,10 +167,11 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
 
     S.appendJs(Run("""$('[data-toggle="tooltip"]').tooltip();"""))
 
-    "#rules-list-container *" #> renderRulesVar.is.get &
-    "#add-rule [onClick]" #> addRule(projectName, moduleName, viewId) &
-    "#del-rule [onClick]" #> delRule(viewId) &
-    "#rules-save [onclick]" #> save(projectName, moduleName, viewId)
+    ".list-container *" #> renderRulesVar.is.get &
+    ".list-main-container [id]" #> viewId &
+    ".add-item [onClick]" #> addRule(projectName, moduleName, viewId) &
+    ".del-item [onClick]" #> delRule(viewId) &
+    ".save-items [onclick]" #> save(projectName, moduleName, viewId)
   }
 
 }
