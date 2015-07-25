@@ -49,22 +49,28 @@ object LiftUtils {
     }
 
   /**
-   * like SHtml.memoize, but used in conjunction with MemoizeTransformWithArg lets you use a function with an argument,
-   * then call apply(arg) for the first apply, then call applyAgain(arg) with a different value
+   * like SHtml.memoize, but used in conjunction with MemoizeTransformWithArg lets you use a function with an argument
+   * SO you can call apply(arg) for the first apply, then call applyAgain(arg) with a different value
    * @param f the function to be called
    * @tparam T the type of the arg
    * @return
    */
   def memoizeWithArg[T](f: (T) => (NodeSeq => NodeSeq)) =
     new MemoizeTransformWithArg[T] {
-      private var lastNodeSeq: NodeSeq = NodeSeq.Empty
+      private var lastNodeSeq: Box[NodeSeq] = None
 
-      def apply(value: T) : NodeSeq => NodeSeq = (ns: NodeSeq) => {
-        lastNodeSeq = ns
-        f(value)(ns)
+      def apply(value: T) : NodeSeq => NodeSeq = {
+        if (lastNodeSeq.isDefined) {
+          throw new RuntimeException("apply must be called only once.")
+        }
+        (ns: NodeSeq) => {
+          lastNodeSeq = Full(ns)
+          f(value)(ns)
+        }
       }
 
-      def applyAgain(value: T): NodeSeq = f(value)(lastNodeSeq)
+      def applyAgain(value: T): NodeSeq = f(value)(lastNodeSeq.openOrThrowException("You must call apply(T) first."))
+
     }
 
 }
