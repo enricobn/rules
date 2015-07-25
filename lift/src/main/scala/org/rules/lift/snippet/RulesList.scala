@@ -162,7 +162,7 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
     val rules : Seq[XMLRule] =
       rulesDAO.getRules(projectName, moduleName).openOrThrowException("Error getting rules.")
 
-    renderRulesVar.set(Some(memoizeWithArg(renderRules, RenderArgs(itemsFinder, itemsGroup, viewId, rules))))
+    renderRulesVar.set(Some(memoizeWithArg(renderRules)))
 
     val is = getClass().getResourceAsStream("/org/rules/lift/XMLRuleJSONSchema.json")
     val schema = scala.io.Source.fromInputStream(is).getLines().mkString("\n")
@@ -177,7 +177,7 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
             });
          """.stripMargin))
 
-    ".list-container *" #> renderRulesVar.is.get &
+    ".list-container *" #> renderRulesVar.is.get.apply(RenderArgs(itemsFinder, itemsGroup, viewId, rules)) &
     ".list-main-container [id]" #> viewId &
     ".add-item [onClick]" #> addRule(state) &
     ".del-item [onClick]" #> delRule(state) &

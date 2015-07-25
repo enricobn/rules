@@ -101,7 +101,7 @@ class ProjectMenu extends RulesDAOProvider with JQueryTabs {
     val parameters = Parameters(UUID.randomUUID().toString, UUID.randomUUID().toString, UUID.randomUUID().toString,
       UUID.randomUUID().toString, S.attr("projectName").openOrThrowException("cannot find attribute projectName!!!"))
 
-    renderModulesVar.set(Some(LiftUtils.memoizeWithArg(renderModules, parameters)))
+    renderModulesVar.set(Some(LiftUtils.memoizeWithArg(renderModules)))
     S.appendJs(
       Run(
         s"""
@@ -112,7 +112,7 @@ class ProjectMenu extends RulesDAOProvider with JQueryTabs {
       createTabs(parameters.layoutCenterContentId, parameters.tabContentId)
     )
 
-    ".list-container *" #> renderModulesVar.is.get &
+    ".list-container *" #> renderModulesVar.is.get.apply(parameters) &
     ".list-container [id]" #> parameters.listContainerId &
     ".add-to-list [onClick]" #> addModule(parameters) &
     ".layout-content [id]" #> parameters.layoutContentId &
