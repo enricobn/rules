@@ -24,8 +24,8 @@ import scala.xml.NodeSeq
  * Created by enrico on 6/25/15.
  */
 object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRule] {
-  private val rulesFinder = JQueryById("rules-buttons")
-  private val ruleGroup: JQueryGroup = new JQueryGroup(rulesFinder, JQueryActivate)
+  private val itemsFinder = JQueryById("rules-buttons")
+  private val itemsGroup: JQueryGroup = new JQueryGroup(itemsFinder, JQueryActivate)
 
   def embed(projectName: String, moduleName: String) = {
     val viewId = UUID.randomUUID().toString
@@ -47,22 +47,22 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
   private def onEditorChange(viewId: String, json: JValue) = {
     val rule = fromJson(json)
     val renderedRule = renderRulesVar.is.get.applyAgain((viewId, Seq(rule))) \ "_"
-    Run(s"${rulesFinder.find(rule.id).toJsCmd}.replaceWith('$renderedRule');") &
-      ruleGroup.select(rule.id)
+    Run(s"${itemsFinder.find(rule.id).toJsCmd}.replaceWith('$renderedRule');") &
+      itemsGroup.select(rule.id)
   }
 
-  def toJson(rule: XMLRule): JValue = {
-    ("id" -> rule.id) ~
-    ("name" -> rule.name) ~
-    ("tags" -> rule.tags) ~
-    ("requires" -> rule.requires.map { r => ("token" -> r.token) ~ ("tags" -> r.tags.toString) }) ~
-    ("provides" -> rule.provides.map { p => ("token" -> p.token) ~ ("value" -> p.value) }) ~
-    ("run" -> rule.run)
+  def toJson(item: XMLRule): JValue = {
+    ("id" -> item.id) ~
+    ("name" -> item.name) ~
+    ("tags" -> item.tags) ~
+    ("requires" -> item.requires.map { r => ("token" -> r.token) ~ ("tags" -> r.tags.toString) }) ~
+    ("provides" -> item.provides.map { p => ("token" -> p.token) ~ ("value" -> p.value) }) ~
+    ("run" -> item.run)
   }
 
-  def fromJson(json: JValue) : XMLRule = {
+  def fromJson(jsonItem: JValue) : XMLRule = {
     implicit val formats = DefaultFormats
-    json.extract[XMLRule]
+    jsonItem.extract[XMLRule]
   }
 
   private def updateRule(viewId: String, rule: XMLRule): JsCmd = {
@@ -90,7 +90,7 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
   private def renderRules(rules : (String, Seq[XMLRule])) : NodeSeq => NodeSeq = {
       ".list-elements *" #> rules._2.map { rule =>
         ".select-item [onClick]" #> ajaxInvoke(() => updateRule(rules._1, rule)) &
-          ".select-item [id]" #> rulesFinder.getDOMId(rule.id) &
+          ".select-item [id]" #> itemsFinder.getDOMId(rule.id) &
           ".select-item *" #> rule.name
       }
   }
@@ -110,7 +110,7 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
           view.cache['${rule.id}'] = ${write(rule)};
           view.changed['${rule.id}'] = '${rule.id}';
           $$('#$viewId .list-container').append('$renderedRule');
-          ${rulesFinder.find(rule.id).toJsCmd}.trigger('click');
+          ${itemsFinder.find(rule.id).toJsCmd}.trigger('click');
         """
       )
     } else {
@@ -124,7 +124,7 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
            var view = $$.liftViews['$viewId'];
            if (typeof view.activeId != 'undefined') {
               view.editingActive = false;
-              ${rulesFinder.find(JsRaw("view.activeId")).toJsCmd}.hide();
+              ${itemsFinder.find(JsRaw("view.activeId")).toJsCmd}.hide();
               view.deleted.push(view.activeId);
               $$("#$viewId .detail-editor").hide();
               view.activeId = undefined;

@@ -7,16 +7,16 @@ import net.liftweb.json.JsonAST.JValue
  * Created by enrico on 7/13/15.
  */
 trait LiftListView[T] {
-  def toJson(value: T): JValue
-  def fromJson(value: JValue): T
+  def toJson(item: T): JValue
+  def fromJson(jsonItem: JValue): T
 
-  protected def write(value: T) : String = {
-    write(toJson(value))
+  protected def write(item: T) : String = {
+    write(toJson(item))
   }
 
-  protected def write(value: JValue) : String = {
+  protected def write(jsonItem: JValue) : String = {
     implicit val formats = DefaultFormats
-    Serialization.write(value)
+    Serialization.write(jsonItem)
   }
 
 }
