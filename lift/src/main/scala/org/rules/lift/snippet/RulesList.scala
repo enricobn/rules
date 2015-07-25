@@ -26,9 +26,7 @@ import scala.xml.NodeSeq
 
 
 object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRule] {
-  val schemaLocation = "/org/rules/lift/XMLRuleJSONSchema.json"
-  private lazy val is = getClass().getResourceAsStream(schemaLocation)
-  private lazy val schema = scala.io.Source.fromInputStream(is).getLines().mkString("\n")
+  protected override val schemaResource = "/org/rules/lift/XMLRuleJSONSchema.json"
 
   private case class RenderArgs(itemsFinder: JQueryById, itemsGroup: JsGroup, viewId: String, items: Seq[XMLRule])
 
@@ -45,7 +43,7 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
     val rule = fromJson(json)
     val renderedRule = renderRulesVar.is.get.applyAgain(RenderArgs(state.itemsFinder, state.itemsGroup,
       state.viewId, Seq(rule))) \ "_"
-    Run(s"${state.itemsFinder.find(rule.id).toJsCmd}.replaceWith('$renderedRule');") &
+    Run(s"${state.itemsFinder.find(rule.id).toJsCmd}.replaceWith(${encJs(renderedRule.toString)});") &
       state.itemsGroup.select(rule.id)
   }
 
