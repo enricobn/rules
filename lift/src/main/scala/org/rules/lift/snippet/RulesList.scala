@@ -25,7 +25,7 @@ import scala.xml.NodeSeq
  */
 object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRule] {
   private val itemsFinder = JQueryById("rules-buttons")
-  private val itemsGroup: JQueryGroup = new JQueryGroup(itemsFinder, JQueryActivate)
+  private val itemsGroup: JsSimpleGroup = new JsSimpleGroup(itemsFinder, CssClassApplier("active"))
 
   def embed(projectName: String, moduleName: String) = {
     val viewId = UUID.randomUUID().toString

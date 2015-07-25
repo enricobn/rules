@@ -19,8 +19,8 @@ private case class Parameters(tabContentId: String, layoutContentId: String,
  * project-menu.html
  */
 class ProjectMenu extends RulesDAOProvider with JQueryTabs {
-  private val modulesFinder = JQueryById("modules-buttons")
-  private val moduleGroup : JQueryGroup = new JQueryGroup(modulesFinder, JQueryHide)
+  //private val modulesFinder = JQueryById("modules-buttons")
+  //private val moduleGroup : JsSimpleGroup = new JsSimpleGroup(modulesFinder, JQueryHide)
 
 
   //println("Constructor " + S.attr("projectName").openOrThrowException("cannot find attribute projectName!"))
@@ -88,7 +88,7 @@ class ProjectMenu extends RulesDAOProvider with JQueryTabs {
       ".select-item [onClick]" #> ajaxInvoke(() => updateModule(parameters, module.name)) &
       ".select-item *" #> module.name &
       ".list-rules [onClick]" #> ajaxInvoke(() => updateRules(parameters.projectName, module.name)) &
-      ".modules-buttons [id]" #> modulesFinder.getDOMId(module.name) &
+      //".modules-buttons [id]" #> modulesFinder.getDOMId(module.name) &
       ".modules-buttons [style+]" #> "display: none;" &
       ".del-from-list [onClick]" #> LiftUtils.bootboxConfirm(s"Are you sure to delete module ${module.name}?",
           () => delModule(parameters, module.name))

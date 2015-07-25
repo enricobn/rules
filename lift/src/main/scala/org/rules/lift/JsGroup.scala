@@ -52,34 +52,34 @@ trait JsGroup {
   def deSelect(id: String) : JsCmd
 }
 
-trait JQueryFinder {
+trait JsItemFinder {
   def find(id: String) : JsExp
   def find(id: JsExp) : JsExp
 }
 
-trait JQueryApplier {
+trait JsGroupApplier {
   def applySelect(e: JsExp) : JsCmd
   def applyDeSelect(e: JsExp) : JsCmd
 }
 
-case class JQueryGroup(finder : JQueryFinder, applyier : JQueryApplier) extends JsGroup {
-  def select(id: String) : JsCmd = applyier.applySelect(finder.find(id))
-  def deSelect(id: String) : JsCmd = applyier.applyDeSelect(finder.find(id))
+case class JsSimpleGroup(finder : JsItemFinder, applier : JsGroupApplier) extends JsGroup {
+  def select(id: String) : JsCmd = applier.applySelect(finder.find(id))
+  def deSelect(id: String) : JsCmd = applier.applyDeSelect(finder.find(id))
 }
 
-case class JQueryById(idPrefix: String) extends JQueryFinder {
+case class JQueryById(idPrefix: String) extends JsItemFinder {
   def find(id: String) : JsExp = Call("$", "#" + getDOMId(id))
   def getDOMId(id: String) = s"${idPrefix}_$id"
   def find(id: JsExp) : JsExp = Call("$", JsRaw(s"'#${idPrefix}_'") + id)
   def getId(domId: String) = domId.substring(idPrefix.length + 1)
 }
 
-object JQueryHide extends JQueryApplier {
+object JQueryHide extends JsGroupApplier {
   def applySelect(e: JsExp) : JsCmd = (e ~> JsFunc("show")).cmd
   def applyDeSelect(e: JsExp) : JsCmd = (e ~> JsFunc("hide")).cmd
 }
 
-object JQueryActivate extends JQueryApplier {
-  def applySelect(e: JsExp) : JsCmd = (e ~> JsFunc("addClass", "active")).cmd
-  def applyDeSelect(e: JsExp) : JsCmd = (e ~> JsFunc("removeClass", "active")).cmd
+case class CssClassApplier(cssClass: String) extends JsGroupApplier {
+  def applySelect(e: JsExp) : JsCmd = (e ~> JsFunc("addClass", cssClass)).cmd
+  def applyDeSelect(e: JsExp) : JsCmd = (e ~> JsFunc("removeClass", cssClass)).cmd
 }

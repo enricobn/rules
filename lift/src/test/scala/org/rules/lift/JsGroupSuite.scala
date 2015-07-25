@@ -9,7 +9,7 @@ import org.scalatest.FunSuite
 class JsGroupSuite extends FunSuite {
 
   test("select & deSelect") {
-    val g : JsGroup = new JQueryGroup(JQueryById("module"), JQueryHide)
+    val g : JsGroup = new JsSimpleGroup(JQueryById("module"), JQueryHide)
     assert(g.select("1").toJsCmd == "$(\"#module-1\").show();")
     assert(g.select("2").toJsCmd == "$(\"#module-2\").show();")
     assert(g.deSelect("1").toJsCmd == "$(\"#module-1\").hide();")
