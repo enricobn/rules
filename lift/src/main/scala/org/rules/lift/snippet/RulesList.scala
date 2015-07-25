@@ -23,32 +23,26 @@ import scala.xml.NodeSeq
 /**
  * Created by enrico on 6/25/15.
  */
+
+
 object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRule] {
-  private val itemsFinder = JQueryById("rules-buttons")
-  private val itemsGroup: JsSimpleGroup = new JsSimpleGroup(itemsFinder, CssClassApplier("active"))
+
+  private case class RulesListState(projectName: String, moduleName: String, viewId: String, itemsFinder: JQueryById,
+                            itemsGroup: JsGroup)
+
+  private case class RenderArgs(itemsFinder: JQueryById, viewID: String, items: Seq[XMLRule])
 
   def embed(projectName: String, moduleName: String) = {
     val viewId = UUID.randomUUID().toString
-    val is = getClass().getResourceAsStream("/org/rules/lift/XMLRuleJSONSchema.json")
-    val schema = scala.io.Source.fromInputStream(is).getLines().mkString("\n")
 
-    <lift:embed what="/rules-list" viewId={viewId} projectName={projectName} moduleName={moduleName}></lift:embed> ++
-      Script(OnLoad( Run(
-        s"""
-        editInit('$viewId', $$("#$viewId .detail-editor"), $schema, function(oldJson, newJson) {
-          if (newJson.name != oldJson.name) {
-            ${jsonCall(JsVar("newJson"), (json : JValue) => onEditorChange(viewId, json))._2.toJsCmd}
-          }
-        });
-      """
-      )))
+    <lift:embed what="/rules-list" viewId={viewId} projectName={projectName} moduleName={moduleName}></lift:embed>
   }
 
-  private def onEditorChange(viewId: String, json: JValue) = {
+  private def onEditorChange(state: RulesListState, json: JValue) = {
     val rule = fromJson(json)
-    val renderedRule = renderRulesVar.is.get.applyAgain((viewId, Seq(rule))) \ "_"
-    Run(s"${itemsFinder.find(rule.id).toJsCmd}.replaceWith('$renderedRule');") &
-      itemsGroup.select(rule.id)
+    val renderedRule = renderRulesVar.is.get.applyAgain(RenderArgs(state.itemsFinder, state.viewId, Seq(rule))) \ "_"
+    Run(s"${state.itemsFinder.find(rule.id).toJsCmd}.replaceWith('$renderedRule');") &
+      state.itemsGroup.select(rule.id)
   }
 
   def toJson(item: XMLRule): JValue = {
@@ -87,30 +81,30 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
     result
   }
 
-  private def renderRules(rules : (String, Seq[XMLRule])) : NodeSeq => NodeSeq = {
-      ".list-elements *" #> rules._2.map { rule =>
-        ".select-item [onClick]" #> ajaxInvoke(() => updateRule(rules._1, rule)) &
-          ".select-item [id]" #> itemsFinder.getDOMId(rule.id) &
+  private def renderRules(arg: RenderArgs) : NodeSeq => NodeSeq = {
+      ".list-elements *" #> arg.items.map { rule =>
+        ".select-item [onClick]" #> ajaxInvoke(() => updateRule(arg.viewID, rule)) &
+          ".select-item [id]" #> arg.itemsFinder.getDOMId(rule.id) &
           ".select-item *" #> rule.name
       }
   }
 
-  private object renderRulesVar extends RequestVar[Option[MemoizeTransformWithArg[(String,Seq[XMLRule])]]](None)
+  private object renderRulesVar extends RequestVar[Option[MemoizeTransformWithArg[RenderArgs]]](None)
 
-  private def addRule(projectName: String, moduleName: String, viewId: String) =
-    LiftUtils.bootboxPrompt("Rule name", addRuleByName(projectName, moduleName, viewId))
+  private def addRule(state: RulesListState) =
+    LiftUtils.bootboxPrompt("Rule name", addRuleByName(state))
 
-  private def addRuleByName(projectName: String, moduleName: String, viewId: String)(name: String) = {
+  private def addRuleByName(state: RulesListState)(name: String) = {
     if (!name.isEmpty) {
-      val rule = rulesDAO.createRule(projectName, moduleName, name)
-      val renderedRule = renderRulesVar.is.get.applyAgain((viewId, Seq(rule))) \ "_"
+      val rule = rulesDAO.createRule(state.projectName, state.moduleName, name)
+      val renderedRule = renderRulesVar.is.get.applyAgain(RenderArgs(state.itemsFinder, state.viewId, Seq(rule))) \ "_"
       Run(
         s"""
-          var view = $$.liftViews['$viewId'];
+          var view = $$.liftViews['${state.viewId}'];
           view.cache['${rule.id}'] = ${write(rule)};
           view.changed['${rule.id}'] = '${rule.id}';
-          $$('#$viewId .list-container').append('$renderedRule');
-          ${itemsFinder.find(rule.id).toJsCmd}.trigger('click');
+          $$('#${state.viewId} .list-container').append('$renderedRule');
+          ${state.itemsFinder.find(rule.id).toJsCmd}.trigger('click');
         """
       )
     } else {
@@ -118,15 +112,15 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
     }
   }
 
-  private def delRule(viewId: String) =
+  private def delRule(state: RulesListState) =
     Run(
         s"""
-           var view = $$.liftViews['$viewId'];
+           var view = $$.liftViews['${state.viewId}'];
            if (typeof view.activeId != 'undefined') {
               view.editingActive = false;
-              ${itemsFinder.find(JsRaw("view.activeId")).toJsCmd}.hide();
+              ${state.itemsFinder.find(JsRaw("view.activeId")).toJsCmd}.hide();
               view.deleted.push(view.activeId);
-              $$("#$viewId .detail-editor").hide();
+              $$("#${state.viewId} .detail-editor").hide();
               view.activeId = undefined;
             }
         """)
@@ -159,18 +153,34 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
     val viewId : String = S.attr("viewId").openOrThrowException("cannot find attribute viewId!")
     val projectName : String = S.attr("projectName").openOrThrowException("cannot find attribute projectName!")
     val moduleName : String = S.attr("moduleName").openOrThrowException("cannot find attribute moduleName!")
+    val itemsFinder = JQueryById(projectName + "_" + moduleName)
+    val itemsGroup: JsSimpleGroup = new JsSimpleGroup(itemsFinder, CssClassApplier("active"))
+
+    val state = RulesListState(projectName, moduleName, viewId, itemsFinder, itemsGroup)
+
     RulesState.resetCurrentRuleId
     val rules : Seq[XMLRule] =
-      rulesDAO.getRules(projectName, moduleName).get
+      rulesDAO.getRules(projectName, moduleName).openOrThrowException("Error getting rules.")
 
-    renderRulesVar.set(Some(memoizeWithArg(renderRules, (viewId, rules))))
+    renderRulesVar.set(Some(memoizeWithArg(renderRules, RenderArgs(itemsFinder, viewId, rules))))
 
-    S.appendJs(Run("""$('[data-toggle="tooltip"]').tooltip();"""))
+    val is = getClass().getResourceAsStream("/org/rules/lift/XMLRuleJSONSchema.json")
+    val schema = scala.io.Source.fromInputStream(is).getLines().mkString("\n")
+
+    S.appendJs(
+      Run(
+        s"""$$('[data-toggle="tooltip"]').tooltip();
+            editInit('$viewId', $$("#$viewId .detail-editor"), $schema, function(oldJson, newJson) {
+              if (newJson.name != oldJson.name) {
+                ${jsonCall(JsVar("newJson"), (json : JValue) => onEditorChange(state, json))._2.toJsCmd}
+              }
+            });
+         """.stripMargin))
 
     ".list-container *" #> renderRulesVar.is.get &
     ".list-main-container [id]" #> viewId &
-    ".add-item [onClick]" #> addRule(projectName, moduleName, viewId) &
-    ".del-item [onClick]" #> delRule(viewId) &
+    ".add-item [onClick]" #> addRule(state) &
+    ".del-item [onClick]" #> delRule(state) &
     ".save-items [onclick]" #> save(projectName, moduleName, viewId)
   }
 
