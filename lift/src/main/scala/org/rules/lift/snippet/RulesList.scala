@@ -26,16 +26,15 @@ import scala.xml.{Text, Attribute, NodeSeq}
 object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRule] {
   protected override val schemaResource = "/org/rules/lift/XMLRuleJSONSchema.json"
 
-  private case class RenderArgs(itemFinder: JsItemFinder, itemsGroup: JsGroup, viewId: String, items: Seq[XMLRule])
-
-  private case class RulesListState(attributes: Map[String,String], viewId: String, itemFinder: JsItemFinder,
+  private case class LiftListState(attributes: Map[String,String], viewId: String, itemFinder: JsItemFinder,
                                     itemsGroup: JsGroup)
+  private case class RenderArgs(state: LiftListState, items: Seq[XMLRule])
+
   protected override val template = "/rules-list"
 
-  private def onEditorChange(state: RulesListState, json: JValue) = {
+  private def onEditorChange(state: LiftListState, json: JValue) = {
     val rule = fromJson(json)
-    val renderedRule = renderRulesVar.is.get.applyAgain(RenderArgs(state.itemFinder, state.itemsGroup,
-      state.viewId, Seq(rule))) \ "_"
+    val renderedRule = renderRulesVar.is.get.applyAgain(RenderArgs(state, Seq(rule))) \ "_"
     Run(s"${state.itemFinder.find(rule.id).toJsCmd}.replaceWith(${encJs(renderedRule.toString)});") &
       state.itemsGroup.select(rule.id)
   }
@@ -74,25 +73,24 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
     )
   }
 
-  private def renderRules(arg: RenderArgs) : NodeSeq => NodeSeq = {
-      ".list-elements *" #> arg.items.map { rule =>
-        ".select-item [onClick]" #> ajaxCall(JsRaw(s"""$$.liftViews["${arg.viewId}"].activeId"""),
-            (oldId) => updateRule(oldId, arg.viewId, arg.itemsGroup, rule)) &
-          ".select-item [id]" #> arg.itemFinder.getDOMId(rule.id) &
+  private def renderRules(args: RenderArgs) : NodeSeq => NodeSeq = {
+      ".list-elements *" #> args.items.map { rule =>
+        ".select-item [onClick]" #> ajaxCall(JsRaw(s"""$$.liftViews["${args.state.viewId}"].activeId"""),
+            (oldId) => updateRule(oldId, args.state.viewId, args.state.itemsGroup, rule)) &
+          ".select-item [id]" #> args.state.itemFinder.getDOMId(rule.id) &
           ".select-item *" #> rule.name
       }
   }
 
   private object renderRulesVar extends RequestVar[Option[MemoizeTransformWithArg[RenderArgs]]](None)
 
-  private def addRule(state: RulesListState) =
+  private def addRule(state: LiftListState) =
     LiftUtils.bootboxPrompt("Rule name", addRuleByName(state))
 
-  private def addRuleByName(state: RulesListState)(name: String) = {
+  private def addRuleByName(state: LiftListState)(name: String) = {
     if (!name.isEmpty) {
       val rule = rulesDAO.createRule(state.attributes("projectName"), state.attributes("moduleName"), name)
-      val renderedRule = renderRulesVar.is.get.applyAgain(RenderArgs(state.itemFinder,
-        state.itemsGroup, state.viewId, Seq(rule))) \ "_"
+      val renderedRule = renderRulesVar.is.get.applyAgain(RenderArgs(state, Seq(rule))) \ "_"
       Run(
         s"""
           var view = $$.liftViews['${state.viewId}'];
@@ -107,7 +105,7 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
     }
   }
 
-  private def delRule(state: RulesListState) =
+  private def delRule(state: LiftListState) =
     Run(
         s"""
            var view = $$.liftViews['${state.viewId}'];
@@ -165,7 +163,7 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
     val itemFinder = getItemFinder(attributes)
     val itemsGroup = getItemsGroup(attributes, itemFinder)
 
-    val state = RulesListState(attributes, viewId, itemFinder, itemsGroup)
+    val state = LiftListState(attributes, viewId, itemFinder, itemsGroup)
 
     val items : Seq[XMLRule] = getItems(attributes)
 
@@ -182,7 +180,7 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
          """.stripMargin))
 
     ".list-main-container [id]" #> viewId &
-    ".list-container *" #> renderRulesVar.is.get.apply(RenderArgs(itemFinder, itemsGroup, viewId, items)) &
+    ".list-container *" #> renderRulesVar.is.get.apply(RenderArgs(state, items)) &
     ".add-item [onClick]" #> addRule(state) &
     ".del-item [onClick]" #> delRule(state) &
     ".save-items [onclick]" #> save(attributes, viewId)
