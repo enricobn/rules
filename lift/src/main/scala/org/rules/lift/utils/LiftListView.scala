@@ -1,5 +1,7 @@
 package org.rules.lift.utils
 
+import net.liftweb.http.js.JE.JsRaw
+import net.liftweb.http.js.JsCmds.Run
 import net.liftweb.json.{Serialization, DefaultFormats}
 import net.liftweb.json.JsonAST.JValue
 import org.rules.lift.{JsGroup, JsItemFinder}
@@ -41,5 +43,23 @@ trait LiftListView[T] {
     implicit val formats = DefaultFormats
     Serialization.write(jsonItem)
   }
+
+  protected def delItem(message: String, state: State) = {
+    val ok = Run(
+      s"""
+           var view = $$.liftViews['${state.viewId}'];
+           if (typeof view.activeId != 'undefined') {
+              view.editingActive = false;
+              ${state.itemFinder.find(JsRaw("view.activeId")).toJsCmd}.hide();
+              view.deleted.push(view.activeId);
+              $$("#${state.viewId} .detail-editor").hide();
+              view.activeId = undefined;
+            }
+        """)
+    LiftUtils.bootboxConfirm(message, ok)
+  }
+
+
+
 
 }

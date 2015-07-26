@@ -101,21 +101,6 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
     }
   }
 
-  private def delRule(state: State) = {
-    val ok = Run(
-      s"""
-           var view = $$.liftViews['${state.viewId}'];
-           if (typeof view.activeId != 'undefined') {
-              view.editingActive = false;
-              ${state.itemFinder.find(JsRaw("view.activeId")).toJsCmd}.hide();
-              view.deleted.push(view.activeId);
-              $$("#${state.viewId} .detail-editor").hide();
-              view.activeId = undefined;
-            }
-        """)
-    LiftUtils.bootboxConfirm("Are you sure to delete current rule?", ok)
-  }
-
   private def save(attributes: Map[String, String], viewId: String) =
     SHtml.jsonCall(JsRaw(s"editChanges('$viewId')"), new JsContext(Empty, Empty), (changedRules: JValue)=>{
       val rules = changedRules \ "changed" match {
@@ -180,7 +165,7 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
     ".list-main-container [id]" #> viewId &
     ".list-container *" #> renderRulesVar.is.get.apply(RenderArgs(state, items)) &
     ".add-item [onClick]" #> addRule(state) &
-    ".del-item [onClick]" #> delRule(state) &
+    ".del-item [onClick]" #> delItem("Are you sure to delete current rule?", state) &
     ".save-items [onclick]" #> save(attributes, viewId)
   }
 
