@@ -55,6 +55,8 @@ trait JsGroup {
 trait JsItemFinder {
   def find(id: String) : JsExp
   def find(id: JsExp) : JsExp
+  def getDOMId(id: String) : String
+  def getId(domId: String) : String
 }
 
 trait JsGroupApplier {

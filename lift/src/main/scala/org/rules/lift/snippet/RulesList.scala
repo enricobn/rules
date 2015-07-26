@@ -23,22 +23,20 @@ import scala.xml.{Text, Attribute, NodeSeq}
 /**
  * Created by enrico on 6/25/15.
  */
-
-
 object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRule] {
   protected override val schemaResource = "/org/rules/lift/XMLRuleJSONSchema.json"
 
-  private case class RenderArgs(itemsFinder: JQueryById, itemsGroup: JsGroup, viewId: String, items: Seq[XMLRule])
+  private case class RenderArgs(itemFinder: JsItemFinder, itemsGroup: JsGroup, viewId: String, items: Seq[XMLRule])
 
-  private case class RulesListState(attributes: Map[String,String], viewId: String, itemsFinder: JQueryById,
+  private case class RulesListState(attributes: Map[String,String], viewId: String, itemFinder: JsItemFinder,
                                     itemsGroup: JsGroup)
   protected override val template = "/rules-list"
 
   private def onEditorChange(state: RulesListState, json: JValue) = {
     val rule = fromJson(json)
-    val renderedRule = renderRulesVar.is.get.applyAgain(RenderArgs(state.itemsFinder, state.itemsGroup,
+    val renderedRule = renderRulesVar.is.get.applyAgain(RenderArgs(state.itemFinder, state.itemsGroup,
       state.viewId, Seq(rule))) \ "_"
-    Run(s"${state.itemsFinder.find(rule.id).toJsCmd}.replaceWith(${encJs(renderedRule.toString)});") &
+    Run(s"${state.itemFinder.find(rule.id).toJsCmd}.replaceWith(${encJs(renderedRule.toString)});") &
       state.itemsGroup.select(rule.id)
   }
 
@@ -80,7 +78,7 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
       ".list-elements *" #> arg.items.map { rule =>
         ".select-item [onClick]" #> ajaxCall(JsRaw(s"""$$.liftViews["${arg.viewId}"].activeId"""),
             (oldId) => updateRule(oldId, arg.viewId, arg.itemsGroup, rule)) &
-          ".select-item [id]" #> arg.itemsFinder.getDOMId(rule.id) &
+          ".select-item [id]" #> arg.itemFinder.getDOMId(rule.id) &
           ".select-item *" #> rule.name
       }
   }
@@ -93,7 +91,7 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
   private def addRuleByName(state: RulesListState)(name: String) = {
     if (!name.isEmpty) {
       val rule = rulesDAO.createRule(state.attributes("projectName"), state.attributes("moduleName"), name)
-      val renderedRule = renderRulesVar.is.get.applyAgain(RenderArgs(state.itemsFinder,
+      val renderedRule = renderRulesVar.is.get.applyAgain(RenderArgs(state.itemFinder,
         state.itemsGroup, state.viewId, Seq(rule))) \ "_"
       Run(
         s"""
@@ -101,7 +99,7 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
           view.cache['${rule.id}'] = ${write(rule)};
           view.changed['${rule.id}'] = '${rule.id}';
           $$('#${state.viewId} .list-container').append(${encJs(renderedRule.toString)});
-          ${state.itemsFinder.find(rule.id).toJsCmd}.trigger('click');
+          ${state.itemFinder.find(rule.id).toJsCmd}.trigger('click');
         """
       )
     } else {
@@ -115,7 +113,7 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
            var view = $$.liftViews['${state.viewId}'];
            if (typeof view.activeId != 'undefined') {
               view.editingActive = false;
-              ${state.itemsFinder.find(JsRaw("view.activeId")).toJsCmd}.hide();
+              ${state.itemFinder.find(JsRaw("view.activeId")).toJsCmd}.hide();
               view.deleted.push(view.activeId);
               $$("#${state.viewId} .detail-editor").hide();
               view.activeId = undefined;
@@ -145,12 +143,17 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
       Run(s"editAfterSave('$viewId');")
     })._2.toJsCmd
 
+  def getItemFinder(attributes: Map[String, String]) : JsItemFinder =
+    JQueryById(attributes("projectName") + "_" + attributes("moduleName"))
+
+  def getItemsGroup(attributes: Map[String, String], itemFinder: JsItemFinder) =
+    new JsSimpleGroup(itemFinder, CssClassApplier("active"))
+
+  def getItems(attributes: Map[String,String]) =
+    rulesDAO.getRules(attributes("projectName"), attributes("moduleName")).openOrThrowException("Error getting rules.")
+
   def render() = {
     val viewId = UUID.randomUUID().toString
-    val projectName : String = S.attr("projectName").openOrThrowException("cannot find attribute projectName!")
-    val moduleName : String = S.attr("moduleName").openOrThrowException("cannot find attribute moduleName!")
-    val itemsFinder = JQueryById(projectName + "_" + moduleName)
-    val itemsGroup: JsSimpleGroup = new JsSimpleGroup(itemsFinder, CssClassApplier("active"))
 
     val attributes = S.attrs.map( attr =>
       attr match {
@@ -159,10 +162,12 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
       }
     ).toMap
 
-    val state = RulesListState(attributes, viewId, itemsFinder, itemsGroup)
+    val itemFinder = getItemFinder(attributes)
+    val itemsGroup = getItemsGroup(attributes, itemFinder)
 
-    val rules : Seq[XMLRule] =
-      rulesDAO.getRules(projectName, moduleName).openOrThrowException("Error getting rules.")
+    val state = RulesListState(attributes, viewId, itemFinder, itemsGroup)
+
+    val items : Seq[XMLRule] = getItems(attributes)
 
     renderRulesVar.set(Some(memoizeWithArg(renderRules)))
 
@@ -177,7 +182,7 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
          """.stripMargin))
 
     ".list-main-container [id]" #> viewId &
-    ".list-container *" #> renderRulesVar.is.get.apply(RenderArgs(itemsFinder, itemsGroup, viewId, rules)) &
+    ".list-container *" #> renderRulesVar.is.get.apply(RenderArgs(itemFinder, itemsGroup, viewId, items)) &
     ".add-item [onClick]" #> addRule(state) &
     ".del-item [onClick]" #> delRule(state) &
     ".save-items [onclick]" #> save(attributes, viewId)
