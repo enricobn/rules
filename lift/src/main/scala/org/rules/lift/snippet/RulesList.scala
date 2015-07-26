@@ -33,11 +33,8 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
   private case class RulesListState(projectName: String, moduleName: String, viewId: String, itemsFinder: JQueryById,
                                     itemsGroup: JsGroup)
 
-  def embed(projectName: String, moduleName: String) = {
-    val viewId = UUID.randomUUID().toString
-
-    <lift:embed what="/rules-list" viewId={viewId} projectName={projectName} moduleName={moduleName}></lift:embed>
-  }
+  def embed(projectName: String, moduleName: String) =
+    <lift:embed what="/rules-list" projectName={projectName} moduleName={moduleName}></lift:embed>
 
   private def onEditorChange(state: RulesListState, json: JValue) = {
     val rule = fromJson(json)
@@ -129,7 +126,6 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
 
   private def save(projectName: String, moduleName: String, viewId: String) =
     SHtml.jsonCall(JsRaw(s"editChanges('$viewId')"), new JsContext(Empty, Empty), (changedRules: JValue)=>{
-      println(changedRules)
       val rules = changedRules \ "changed" match {
         case JObject(x :: xs) =>
           val l = x :: xs
@@ -152,7 +148,7 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
     })._2.toJsCmd
 
   def render() = {
-    val viewId : String = S.attr("viewId").openOrThrowException("cannot find attribute viewId!")
+    val viewId = UUID.randomUUID().toString
     val projectName : String = S.attr("projectName").openOrThrowException("cannot find attribute projectName!")
     val moduleName : String = S.attr("moduleName").openOrThrowException("cannot find attribute moduleName!")
     val itemsFinder = JQueryById(projectName + "_" + moduleName)
