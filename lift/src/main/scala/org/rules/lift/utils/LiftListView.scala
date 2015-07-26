@@ -2,7 +2,7 @@ package org.rules.lift.utils
 
 import net.liftweb.json.{Serialization, DefaultFormats}
 import net.liftweb.json.JsonAST.JValue
-import org.rules.lift.snippet.RulesList._
+import org.rules.lift.{JsGroup, JsItemFinder}
 
 import scala.xml.{Text, Attribute}
 
@@ -10,6 +10,11 @@ import scala.xml.{Text, Attribute}
  * Created by enrico on 7/13/15.
  */
 trait LiftListView[T] {
+
+  protected case class State(attributes: Map[String,String], viewId: String, itemFinder: JsItemFinder,
+                                   itemsGroup: JsGroup)
+  protected case class RenderArgs(state: State, items: Seq[T])
+
   protected val schemaResource : String
 
   protected val template : String

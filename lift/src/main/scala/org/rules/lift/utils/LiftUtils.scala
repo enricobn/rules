@@ -30,6 +30,13 @@ object LiftUtils {
         });
         """)
 
+  def bootboxConfirm(caption: String, cmd: JsCmd) =
+    Run(s"""bootbox.confirm("${caption}", function(result) {
+          if(result) {
+            ${cmd.toJsCmd};
+          }
+        });
+        """)
   /**
    * if the box is Full, returns the evaluation of func, passing in the boxed value, otherwise notifies an S.error
    * with the given message and returns the default

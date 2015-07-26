@@ -26,13 +26,9 @@ import scala.xml.{Text, Attribute, NodeSeq}
 object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRule] {
   protected override val schemaResource = "/org/rules/lift/XMLRuleJSONSchema.json"
 
-  private case class LiftListState(attributes: Map[String,String], viewId: String, itemFinder: JsItemFinder,
-                                    itemsGroup: JsGroup)
-  private case class RenderArgs(state: LiftListState, items: Seq[XMLRule])
-
   protected override val template = "/rules-list"
 
-  private def onEditorChange(state: LiftListState, json: JValue) = {
+  private def onEditorChange(state: State, json: JValue) = {
     val rule = fromJson(json)
     val renderedRule = renderRulesVar.is.get.applyAgain(RenderArgs(state, Seq(rule))) \ "_"
     Run(s"${state.itemFinder.find(rule.id).toJsCmd}.replaceWith(${encJs(renderedRule.toString)});") &
@@ -84,10 +80,10 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
 
   private object renderRulesVar extends RequestVar[Option[MemoizeTransformWithArg[RenderArgs]]](None)
 
-  private def addRule(state: LiftListState) =
+  private def addRule(state: State) =
     LiftUtils.bootboxPrompt("Rule name", addRuleByName(state))
 
-  private def addRuleByName(state: LiftListState)(name: String) = {
+  private def addRuleByName(state: State)(name: String) = {
     if (!name.isEmpty) {
       val rule = rulesDAO.createRule(state.attributes("projectName"), state.attributes("moduleName"), name)
       val renderedRule = renderRulesVar.is.get.applyAgain(RenderArgs(state, Seq(rule))) \ "_"
@@ -105,9 +101,9 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
     }
   }
 
-  private def delRule(state: LiftListState) =
-    Run(
-        s"""
+  private def delRule(state: State) = {
+    val ok = Run(
+      s"""
            var view = $$.liftViews['${state.viewId}'];
            if (typeof view.activeId != 'undefined') {
               view.editingActive = false;
@@ -117,6 +113,8 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
               view.activeId = undefined;
             }
         """)
+    LiftUtils.bootboxConfirm("Are you sure to delete current rule?", ok)
+  }
 
   private def save(attributes: Map[String, String], viewId: String) =
     SHtml.jsonCall(JsRaw(s"editChanges('$viewId')"), new JsContext(Empty, Empty), (changedRules: JValue)=>{
@@ -163,7 +161,7 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
     val itemFinder = getItemFinder(attributes)
     val itemsGroup = getItemsGroup(attributes, itemFinder)
 
-    val state = LiftListState(attributes, viewId, itemFinder, itemsGroup)
+    val state = State(attributes, viewId, itemFinder, itemsGroup)
 
     val items : Seq[XMLRule] = getItems(attributes)
 
