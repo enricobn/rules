@@ -18,7 +18,7 @@ import org.rules.lift.utils.{LiftListView, MemoizeTransformWithArg, LiftUtils}
 import LiftUtils._
 import org.rules.rule.xml.XMLRule
 
-import scala.xml.NodeSeq
+import scala.xml.{Text, Attribute, NodeSeq}
 
 /**
  * Created by enrico on 6/25/15.
@@ -30,11 +30,9 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
 
   private case class RenderArgs(itemsFinder: JQueryById, itemsGroup: JsGroup, viewId: String, items: Seq[XMLRule])
 
-  private case class RulesListState(projectName: String, moduleName: String, viewId: String, itemsFinder: JQueryById,
+  private case class RulesListState(attributes: Map[String,String], viewId: String, itemsFinder: JQueryById,
                                     itemsGroup: JsGroup)
-
-  def embed(projectName: String, moduleName: String) =
-    <lift:embed what="/rules-list" projectName={projectName} moduleName={moduleName}></lift:embed>
+  protected override val template = "/rules-list"
 
   private def onEditorChange(state: RulesListState, json: JValue) = {
     val rule = fromJson(json)
@@ -94,7 +92,7 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
 
   private def addRuleByName(state: RulesListState)(name: String) = {
     if (!name.isEmpty) {
-      val rule = rulesDAO.createRule(state.projectName, state.moduleName, name)
+      val rule = rulesDAO.createRule(state.attributes("projectName"), state.attributes("moduleName"), name)
       val renderedRule = renderRulesVar.is.get.applyAgain(RenderArgs(state.itemsFinder,
         state.itemsGroup, state.viewId, Seq(rule))) \ "_"
       Run(
@@ -124,7 +122,7 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
             }
         """)
 
-  private def save(projectName: String, moduleName: String, viewId: String) =
+  private def save(attributes: Map[String, String], viewId: String) =
     SHtml.jsonCall(JsRaw(s"editChanges('$viewId')"), new JsContext(Empty, Empty), (changedRules: JValue)=>{
       val rules = changedRules \ "changed" match {
         case JObject(x :: xs) =>
@@ -139,7 +137,7 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
         case _ => List.empty[String]
       }
 
-      rulesDAO.updateRulesAndSave(projectName, moduleName, rules, deletedRules) match {
+      rulesDAO.updateRulesAndSave(attributes("projectName"), attributes("moduleName"), rules, deletedRules) match {
         case Full(result) => S.notice("Save succeeded")
         case Failure(msg, _, _) => S.error("Save error: " + msg)
         case _ => S.error("Save error")
@@ -154,7 +152,14 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
     val itemsFinder = JQueryById(projectName + "_" + moduleName)
     val itemsGroup: JsSimpleGroup = new JsSimpleGroup(itemsFinder, CssClassApplier("active"))
 
-    val state = RulesListState(projectName, moduleName, viewId, itemsFinder, itemsGroup)
+    val attributes = S.attrs.map( attr =>
+      attr match {
+        case (Left(key), value) => (key -> value)
+        case (Right((namespace, key)), value) => (namespace + ":" + key -> value)
+      }
+    ).toMap
+
+    val state = RulesListState(attributes, viewId, itemsFinder, itemsGroup)
 
     val rules : Seq[XMLRule] =
       rulesDAO.getRules(projectName, moduleName).openOrThrowException("Error getting rules.")
@@ -171,11 +176,11 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
             });
          """.stripMargin))
 
-    ".list-container *" #> renderRulesVar.is.get.apply(RenderArgs(itemsFinder, itemsGroup, viewId, rules)) &
     ".list-main-container [id]" #> viewId &
+    ".list-container *" #> renderRulesVar.is.get.apply(RenderArgs(itemsFinder, itemsGroup, viewId, rules)) &
     ".add-item [onClick]" #> addRule(state) &
     ".del-item [onClick]" #> delRule(state) &
-    ".save-items [onclick]" #> save(projectName, moduleName, viewId)
+    ".save-items [onclick]" #> save(attributes, viewId)
   }
 
 }
