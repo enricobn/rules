@@ -1,6 +1,7 @@
 package org.rules.lift.utils
 
 import net.liftweb.http.js.JE.JsRaw
+import net.liftweb.http.js.JsCmd
 import net.liftweb.http.js.JsCmds.Run
 import net.liftweb.json.{Serialization, DefaultFormats}
 import net.liftweb.json.JsonAST.JValue
@@ -20,6 +21,29 @@ trait LiftListView[T] {
   protected val schemaResource : String
 
   protected val template : String
+
+  protected def getId(item: T) : String
+
+  protected def updateItem(oldId: String, viewId: String, itemsGroup: JsGroup, item: T): JsCmd = {
+    val id = getId(item)
+    Run(
+      s"""
+        var view = $$.liftViews['$viewId'];
+        view.jsonEditor.disable();
+        view.jsonEditor.off('change', view.changeListener);
+        view.editingActive = false;
+        if (typeof view.cache['$id'] != 'undefined') {
+          view.updateEditor(view.cache['$id']);
+        } else {
+          view.updateEditor(${write(item)});
+        }
+        if ('$oldId' != 'undefined') {
+          ${itemsGroup.deSelect(oldId).toJsCmd}
+        }
+        ${itemsGroup.select(id).toJsCmd}
+      """.stripMargin
+    )
+  }
 
   def embed(attributes: Map[String,String]) = {
     def result = <lift:embed what={template}></lift:embed>

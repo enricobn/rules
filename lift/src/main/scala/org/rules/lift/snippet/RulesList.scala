@@ -8,31 +8,33 @@ import net.liftweb.http._
 import net.liftweb.http.js.JE.{JsVar, JsRaw}
 import net.liftweb.http.js.JsCmd
 import net.liftweb.http.js.JsCmds._
-import net.liftweb.json.{Serialization, DefaultFormats}
+import net.liftweb.json.DefaultFormats
 import net.liftweb.json.JsonAST._
 import net.liftweb.json.JsonDSL._
-import net.liftweb.sitemap.*
 import net.liftweb.util.Helpers._
 import org.rules.lift._
 import org.rules.lift.utils.{LiftListView, MemoizeTransformWithArg, LiftUtils}
 import LiftUtils._
 import org.rules.rule.xml.XMLRule
 
-import scala.xml.{Text, Attribute, NodeSeq}
+import scala.xml.NodeSeq
 
 /**
  * Created by enrico on 6/25/15.
  */
 object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRule] {
-  protected override val schemaResource = "/org/rules/lift/XMLRuleJSONSchema.json"
+  protected val schemaResource = "/org/rules/lift/XMLRuleJSONSchema.json"
 
-  protected override val template = "/rules-list"
+  protected val template = "/rules-list"
+
+  protected def getId(item: XMLRule) = item.id
 
   private def onEditorChange(state: State, json: JValue) = {
     val rule = fromJson(json)
+    val id = getId(rule)
     val renderedRule = renderRulesVar.is.get.applyAgain(RenderArgs(state, Seq(rule))) \ "_"
-    Run(s"${state.itemFinder.find(rule.id).toJsCmd}.replaceWith(${encJs(renderedRule.toString)});") &
-      state.itemsGroup.select(rule.id)
+    Run(s"${state.itemFinder.find(id).toJsCmd}.replaceWith(${encJs(renderedRule.toString)});") &
+      state.itemsGroup.select(id)
   }
 
   def toJson(item: XMLRule): JValue = {
@@ -49,30 +51,10 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
     jsonItem.extract[XMLRule]
   }
 
-  private def updateRule(oldId: String, viewId: String, itemsGroup: JsGroup, rule: XMLRule): JsCmd = {
-    JsRaw(
-      s"""
-        var view = $$.liftViews['$viewId'];
-        view.jsonEditor.disable();
-        view.jsonEditor.off('change', view.changeListener);
-        view.editingActive = false;
-        if (typeof view.cache['${rule.id}'] != 'undefined') {
-          view.updateEditor(view.cache['${rule.id}']);
-        } else {
-          view.updateEditor(${write(rule)});
-        }
-        if ('$oldId' != 'undefined') {
-          ${itemsGroup.deSelect(oldId).toJsCmd}
-        }
-        ${itemsGroup.select(rule.id).toJsCmd}
-      """.stripMargin
-    )
-  }
-
   private def renderRules(args: RenderArgs) : NodeSeq => NodeSeq = {
       ".list-elements *" #> args.items.map { rule =>
         ".select-item [onClick]" #> ajaxCall(JsRaw(s"""$$.liftViews["${args.state.viewId}"].activeId"""),
-            (oldId) => updateRule(oldId, args.state.viewId, args.state.itemsGroup, rule)) &
+            (oldId) => updateItem(oldId, args.state.viewId, args.state.itemsGroup, rule)) &
           ".select-item [id]" #> args.state.itemFinder.getDOMId(rule.id) &
           ".select-item *" #> rule.name
       }
