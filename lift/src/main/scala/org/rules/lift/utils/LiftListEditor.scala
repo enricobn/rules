@@ -146,7 +146,7 @@ trait LiftListEditor[T] {
               $$("#${state.viewId} .detail-editor").hide();
               view.activeId = undefined;
             }
-        """)
+        """.stripMargin)
     LiftUtils.bootboxConfirm(message, ok)
   }
 
@@ -186,7 +186,7 @@ trait LiftListEditor[T] {
       view.changed['$id'] = '$id';
       $$('#${state.viewId} .list-container').append(${encJs(renderedItem.toString)});
       ${state.itemFinder.find(id).toJsCmd}.trigger('click');
-    """
+    """.stripMargin
     )
   }
 
