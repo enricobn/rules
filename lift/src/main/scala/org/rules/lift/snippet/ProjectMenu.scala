@@ -30,7 +30,7 @@ class ProjectMenu extends RulesDAOProvider with JQueryTabs {
 
   private def updateModule(parameters: Parameters, name: String) = {
     addTab(parameters.tabContentId, name,
-      RulesListEditor.embed(Map("projectName" -> parameters.projectName, "moduleName" ->name))
+      () => RulesListEditor.embed(Map("projectName" -> parameters.projectName, "moduleName" ->name))
     )
 /*    val deselect = RulesState.currentModuleName match {
       case Some(module) => moduleGroup.deSelect(module)
