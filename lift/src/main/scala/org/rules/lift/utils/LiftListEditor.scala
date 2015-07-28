@@ -1,30 +1,31 @@
 package org.rules.lift.utils
 
+import java.util.UUID
+
 import net.liftweb.common.{Failure, Full, Empty, Box}
 import net.liftweb.http.SHtml._
 import net.liftweb.http._
-import net.liftweb.http.js.JE.JsRaw
+import net.liftweb.http.js.JE.{JsVar, JsRaw}
 import net.liftweb.http.js.JsCmd
-import net.liftweb.http.js.JsCmds.Run
+import net.liftweb.http.js.JsCmds._
 import net.liftweb.json.{Serialization, DefaultFormats}
 import net.liftweb.json.JsonAST.{JString, JArray, JObject, JValue}
 import net.liftweb.util.Helpers._
-import org.rules.lift.{JsGroup, JsItemFinder}
+import org.rules.lift._
+import org.rules.lift.utils.LiftUtils._
 
 import scala.xml._
 
 /**
  * Created by enrico on 7/13/15.
  */
-trait LiftListView[T] {
+trait LiftListEditor[T] {
 
   protected case class State(attributes: Map[String,String], viewId: String, itemFinder: JsItemFinder,
                                    itemsGroup: JsGroup)
   protected case class RenderArgs(state: State, items: Seq[T])
 
   protected val schemaResource : String
-
-  //protected val templateName : String
 
   protected def getId(item: T) : String
 
@@ -34,7 +35,15 @@ trait LiftListView[T] {
 
   def fromJson(jsonItem: JValue): T
 
-  protected def save(state: State, changedItems: List[T], deletedItems: List[String]) : Box[Unit]
+  protected def save(attributes: Map[String, String], changedItems: List[T], deletedItems: List[String]) : Box[Unit]
+
+  protected def getItemFinder(attributes: Map[String, String]) : JsItemFinder
+
+  protected def getItemsGroup(attributes: Map[String, String], itemFinder: JsItemFinder) : JsGroup
+
+  protected def getItems(attributes: Map[String,String]) : Seq[T]
+
+  protected def addItem(attributes: Map[String, String]) : T
 
   protected def renderItems(args: RenderArgs) : NodeSeq => NodeSeq = {
     ".list-elements *" #> args.items.map { item =>
@@ -158,7 +167,7 @@ trait LiftListView[T] {
         case _ => List.empty[String]
       }
 
-      save(state, changedItems, deletedItems) match {
+      save(state.attributes, changedItems, deletedItems) match {
         case Full(result) => S.notice("Save succeeded")
         case Failure(msg, _, _) => S.error("Save error: " + msg)
         case _ => S.error("Save error")
@@ -166,4 +175,63 @@ trait LiftListView[T] {
       Run(s"editAfterSave('${state.viewId}');")
     })._2.toJsCmd
 
+  private def addItem(state: State) : JsCmd = {
+    val item = addItem(state.attributes)
+    val renderedItem = renderItemsVar.is.get.applyAgain(RenderArgs(state, Seq(item))) \ "_"
+    val id = getId(item)
+    Run(
+      s"""
+      var view = $$.liftViews['${state.viewId}'];
+      view.cache['$id'] = ${write(item)};
+      view.changed['$id'] = '$id';
+      $$('#${state.viewId} .list-container').append(${encJs(renderedItem.toString)});
+      ${state.itemFinder.find(id).toJsCmd}.trigger('click');
+    """
+    )
+  }
+
+  private def onEditorChange(state: State, json: JValue) = {
+    val item = fromJson(json)
+    val id = getId(item)
+    val renderedItem = renderItemsVar.is.get.applyAgain(RenderArgs(state, Seq(item))) \ "_"
+    Run(s"${state.itemFinder.find(id).toJsCmd}.replaceWith(${encJs(renderedItem.toString)});") &
+      state.itemsGroup.select(id)
+  }
+
+  def render() = {
+    val viewId = UUID.randomUUID().toString
+
+    val attributes = S.attrs.map( attr =>
+      attr match {
+        case (Left(key), value) => (key -> value)
+        case (Right((namespace, key)), value) => (namespace + ":" + key -> value)
+      }
+    ).toMap
+
+    val itemFinder = getItemFinder(attributes)
+    val itemsGroup = getItemsGroup(attributes, itemFinder)
+
+    val state = State(attributes, viewId, itemFinder, itemsGroup)
+
+    val items : Seq[T] = getItems(attributes)
+
+    renderItemsVar.set(Some(memoizeWithArg(renderItems)))
+
+    S.appendJs(
+      Run(
+        s"""$$('[data-toggle="tooltip"]').tooltip();
+            editInit('$viewId', $$("#$viewId .detail-editor"), $schema, function(oldJson, newJson) {
+              if (newJson.name != oldJson.name) {
+                ${jsonCall(JsVar("newJson"), (json : JValue) => onEditorChange(state, json))._2.toJsCmd}
+              }
+            });
+         """.stripMargin))
+
+    ".list-main-container [id]" #> viewId &
+    ".list-container *" #> renderItemsVar.is.get.apply(RenderArgs(state, items)) &
+    ".add-item [onClick]" #> ajaxCall("undefined", (_) => addItem(state)) &
+    ".del-item [onClick]" #> delItem("Are you sure to delete current item?", state) &
+    ".save-items [onclick]" #> save(state)
+  }
+  
 }

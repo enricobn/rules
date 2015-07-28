@@ -27,9 +27,9 @@ class EditRulesSuite extends FunSuite {
       // TODO ruleToJson is in RulesList but jsonToRule is in EditRules and this is the class for testing EditRules,
       // but I think the must all be in RulesList then the test class
 
-      val json = RulesList.toJson(rule)
+      val json = RulesListEditor.toJson(rule)
 
-      val fromJson = RulesList.fromJson(json)
+      val fromJson = RulesListEditor.fromJson(json)
 
       assert(rule == fromJson)
     }
