@@ -6,7 +6,6 @@ import net.liftweb.common._
 import net.liftweb.http.SHtml._
 import net.liftweb.http._
 import net.liftweb.http.js.JE.{JsVar, JsRaw}
-import net.liftweb.http.js.JsCmd
 import net.liftweb.http.js.JsCmds._
 import net.liftweb.json.DefaultFormats
 import net.liftweb.json.JsonAST._
@@ -17,7 +16,7 @@ import org.rules.lift.utils.{LiftListView, MemoizeTransformWithArg, LiftUtils}
 import LiftUtils._
 import org.rules.rule.xml.XMLRule
 
-import scala.xml.NodeSeq
+import scala.xml.{Text, NodeSeq}
 
 /**
  * Created by enrico on 6/25/15.
@@ -25,7 +24,7 @@ import scala.xml.NodeSeq
 object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRule] {
   protected val schemaResource = "/org/rules/lift/XMLRuleJSONSchema.json"
 
-  protected val template = "/rules-list"
+  //protected val templateName = "/lift-edit-list"
 
   protected def getId(item: XMLRule) = item.id
 
@@ -51,14 +50,8 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
     jsonItem.extract[XMLRule]
   }
 
-  private def renderRules(args: RenderArgs) : NodeSeq => NodeSeq = {
-      ".list-elements *" #> args.items.map { rule =>
-        ".select-item [onClick]" #> ajaxCall(JsRaw(s"""$$.liftViews["${args.state.viewId}"].activeId"""),
-            (oldId) => updateItem(oldId, args.state.viewId, args.state.itemsGroup, rule)) &
-          ".select-item [id]" #> args.state.itemFinder.getDOMId(rule.id) &
-          ".select-item *" #> rule.name
-      }
-  }
+  protected def renderItem(item: XMLRule) : NodeSeq =
+    <div class="btn btn-primary rules-nav" style="float: left;">{item.name}</div>
 
   private object renderRulesVar extends RequestVar[Option[MemoizeTransformWithArg[RenderArgs]]](None)
 
@@ -132,7 +125,7 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
 
     val items : Seq[XMLRule] = getItems(attributes)
 
-    renderRulesVar.set(Some(memoizeWithArg(renderRules)))
+    renderRulesVar.set(Some(memoizeWithArg(renderItems)))
 
     S.appendJs(
       Run(
