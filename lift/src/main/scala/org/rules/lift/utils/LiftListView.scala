@@ -1,12 +1,13 @@
 package org.rules.lift.utils
 
+import net.liftweb.common.{Failure, Full, Empty, Box}
 import net.liftweb.http.SHtml._
-import net.liftweb.http.{S, Templates}
+import net.liftweb.http._
 import net.liftweb.http.js.JE.JsRaw
 import net.liftweb.http.js.JsCmd
 import net.liftweb.http.js.JsCmds.Run
 import net.liftweb.json.{Serialization, DefaultFormats}
-import net.liftweb.json.JsonAST.JValue
+import net.liftweb.json.JsonAST.{JString, JArray, JObject, JValue}
 import net.liftweb.util.Helpers._
 import org.rules.lift.{JsGroup, JsItemFinder}
 
@@ -32,6 +33,8 @@ trait LiftListView[T] {
   def toJson(item: T): JValue
 
   def fromJson(jsonItem: JValue): T
+
+  protected def save(state: State, changedItems: List[T], deletedItems: List[String]) : Box[Unit]
 
   protected def renderItems(args: RenderArgs) : NodeSeq => NodeSeq = {
     ".list-elements *" #> args.items.map { item =>
@@ -106,25 +109,7 @@ trait LiftListView[T] {
   }
 
   def embed(attributes: Map[String,String]) = {
-/*
-    def idEquals(id: String)(node: Node) = {
-      node.attributes.exists{ attribute => attribute.key == "id" && attribute.value.text == id }
-    }
-
-    val template = Templates("lift-edit-list" :: Nil).openOrThrowException("Cannot find lift-edit-list.html")
-    val rulesListRealContent = template \\ "_" filter idEquals("rules_list_real_content") head
-
-    rulesListRealContent match {
-      case e : Elem => attributes.foldLeft(e){ (actual, tuple) => actual % Attribute(None, tuple._1, Text(tuple._2), scala.xml.Null) }
-      case _ => throw new RuntimeException("Error loading lift-edit-list.html")
-    }
-*/
-
     attributes.foldLeft(template){ (actual, tuple) => actual % Attribute(None, tuple._1, Text(tuple._2), scala.xml.Null) }
-/*
-    def result = <lift:embed what={template}></lift:embed>
-    attributes.foldLeft(result){ (actual, tuple) => actual % Attribute(None, tuple._1, Text(tuple._2), scala.xml.Null) }
-*/
   }
 
   protected lazy val schema = {
@@ -155,5 +140,30 @@ trait LiftListView[T] {
         """)
     LiftUtils.bootboxConfirm(message, ok)
   }
+
+  protected object renderItemsVar extends RequestVar[Option[MemoizeTransformWithArg[RenderArgs]]](None)
+
+  protected def save(state: State) : String =
+    SHtml.jsonCall(JsRaw(s"editChanges('${state.viewId}')"), new JsContext(Empty, Empty), (changes: JValue) => {
+      val changedItems = changes \ "changed" match {
+        case JObject(x :: xs) =>
+          val l = x :: xs
+          l.foldLeft(List.empty[T]){ (actual, field) => actual.:+(fromJson(field.value))}
+        case _ => List.empty[T]
+      }
+
+      val deletedItems = changes \ "deleted" match {
+        case JArray(l: List[JString]) =>
+          l.foldLeft(List.empty[String]){ (actual, field) => actual.:+(field.s)}
+        case _ => List.empty[String]
+      }
+
+      save(state, changedItems, deletedItems) match {
+        case Full(result) => S.notice("Save succeeded")
+        case Failure(msg, _, _) => S.error("Save error: " + msg)
+        case _ => S.error("Save error")
+      }
+      Run(s"editAfterSave('${state.viewId}');")
+    })._2.toJsCmd
 
 }

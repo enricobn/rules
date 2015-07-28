@@ -24,14 +24,12 @@ import scala.xml.{Text, NodeSeq}
 object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRule] {
   protected val schemaResource = "/org/rules/lift/XMLRuleJSONSchema.json"
 
-  //protected val templateName = "/lift-edit-list"
-
   protected def getId(item: XMLRule) = item.id
 
   private def onEditorChange(state: State, json: JValue) = {
     val rule = fromJson(json)
     val id = getId(rule)
-    val renderedRule = renderRulesVar.is.get.applyAgain(RenderArgs(state, Seq(rule))) \ "_"
+    val renderedRule = renderItemsVar.is.get.applyAgain(RenderArgs(state, Seq(rule))) \ "_"
     Run(s"${state.itemFinder.find(id).toJsCmd}.replaceWith(${encJs(renderedRule.toString)});") &
       state.itemsGroup.select(id)
   }
@@ -53,15 +51,13 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
   protected def renderItem(item: XMLRule) : NodeSeq =
     <div class="btn btn-primary rules-nav" style="float: left;">{item.name}</div>
 
-  private object renderRulesVar extends RequestVar[Option[MemoizeTransformWithArg[RenderArgs]]](None)
-
   private def addRule(state: State) =
     LiftUtils.bootboxPrompt("Rule name", addRuleByName(state))
 
   private def addRuleByName(state: State)(name: String) = {
     if (!name.isEmpty) {
       val rule = rulesDAO.createRule(state.attributes("projectName"), state.attributes("moduleName"), name)
-      val renderedRule = renderRulesVar.is.get.applyAgain(RenderArgs(state, Seq(rule))) \ "_"
+      val renderedRule = renderItemsVar.is.get.applyAgain(RenderArgs(state, Seq(rule))) \ "_"
       Run(
         s"""
           var view = $$.liftViews['${state.viewId}'];
@@ -76,28 +72,8 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
     }
   }
 
-  private def save(attributes: Map[String, String], viewId: String) =
-    SHtml.jsonCall(JsRaw(s"editChanges('$viewId')"), new JsContext(Empty, Empty), (changedRules: JValue)=>{
-      val rules = changedRules \ "changed" match {
-        case JObject(x :: xs) =>
-          val l = x :: xs
-          l.foldLeft(List.empty[XMLRule]){ (actual, field) => actual.:+(fromJson(field.value))}
-        case _ => List.empty[XMLRule]
-      }
-
-      val deletedRules = changedRules \ "deleted" match {
-        case JArray(l: List[JString]) =>
-          l.foldLeft(List.empty[String]){ (actual, field) => actual.:+(field.s)}
-        case _ => List.empty[String]
-      }
-
-      rulesDAO.updateRulesAndSave(attributes("projectName"), attributes("moduleName"), rules, deletedRules) match {
-        case Full(result) => S.notice("Save succeeded")
-        case Failure(msg, _, _) => S.error("Save error: " + msg)
-        case _ => S.error("Save error")
-      }
-      Run(s"editAfterSave('$viewId');")
-    })._2.toJsCmd
+  protected def save(state: State, changedItems: List[XMLRule], deletedItems: List[String]) : Box[Unit] =
+    rulesDAO.updateRulesAndSave(state.attributes("projectName"), state.attributes("moduleName"), changedItems, deletedItems)
 
   def getItemFinder(attributes: Map[String, String]) : JsItemFinder =
     JQueryById(attributes("projectName") + "_" + attributes("moduleName"))
@@ -125,7 +101,7 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
 
     val items : Seq[XMLRule] = getItems(attributes)
 
-    renderRulesVar.set(Some(memoizeWithArg(renderItems)))
+    renderItemsVar.set(Some(memoizeWithArg(renderItems)))
 
     S.appendJs(
       Run(
@@ -138,10 +114,10 @@ object RulesList extends Loggable with RulesDAOProvider with LiftListView[XMLRul
          """.stripMargin))
 
     ".list-main-container [id]" #> viewId &
-    ".list-container *" #> renderRulesVar.is.get.apply(RenderArgs(state, items)) &
+    ".list-container *" #> renderItemsVar.is.get.apply(RenderArgs(state, items)) &
     ".add-item [onClick]" #> addRule(state) &
     ".del-item [onClick]" #> delItem("Are you sure to delete current rule?", state) &
-    ".save-items [onclick]" #> save(attributes, viewId)
+    ".save-items [onclick]" #> save(state)
   }
 
 }
