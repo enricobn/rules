@@ -20,7 +20,7 @@ trait JQueryTabs {
     val newTabId = UUID.randomUUID().toString
 
     // lazy, so onClose is not evaluated if not required, since addCloseAndRefresh is used only in the ajaxCall
-    // if the tab does not exists
+    // if the tab does not exist
     lazy val addCloseAndRefresh = Run(
       s"""
         // close icon: removing the tab on click
@@ -69,8 +69,9 @@ trait JQueryTabs {
             "<div id='$newTabId' style='height: 100%;'></div>"
           );
           ${ajaxCall("undefined", (_) =>
-            SetHtml(newTabId, content()) &
-            addCloseAndRefresh)._2.toJsCmd
+              SetHtml(newTabId, content()) &
+              addCloseAndRefresh
+            )._2.toJsCmd
           }
         }
      """)
@@ -80,11 +81,12 @@ trait JQueryTabs {
     SetHtml(where,
       <div id={tabContainerId} style="height: 100%">
         <ul></ul>
-      </div>) &
-      Run(
-        s"""
-          $$( "#$tabContainerId" ).tabs()
-          $$( "#$tabContainerId" ).hide();
-        """.stripMargin
-      )
+      </div>
+    ) &
+    Run(
+      s"""
+        $$( "#$tabContainerId" ).tabs()
+        $$( "#$tabContainerId" ).hide();
+      """.stripMargin
+    )
 }
