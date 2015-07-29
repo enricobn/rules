@@ -20,14 +20,7 @@ private case class Parameters(tabContentId: String, layoutContentId: String,
  * project-menu.html
  */
 class ProjectMenu extends RulesDAOProvider with JQueryTabs {
-  //private val modulesFinder = JQueryById("modules-buttons")
-  //private val moduleGroup : JsSimpleGroup = new JsSimpleGroup(modulesFinder, JQueryHide)
-
-
-  //println("Constructor " + S.attr("projectName").openOrThrowException("cannot find attribute projectName!"))
-
-  // TODO error check
-  private def modules(projectName: String) = rulesDAO.getModules(projectName).getOrElse(Seq.empty)
+  private def modules(projectName: String) = rulesDAO.getModules(projectName).openOrThrowException("Error getting modules")
 
   private def updateModule(parameters: Parameters, name: String) = {
     // lazy so it's not called if the tab already exists
@@ -39,10 +32,7 @@ class ProjectMenu extends RulesDAOProvider with JQueryTabs {
 
   private def addModuleCall(parameters: Parameters)(name: String) = {
     if (!name.isEmpty) {
-      // TODO check errors
-      rulesDAO.createModule(parameters.projectName, name)
-
-      //Index.projectVar.set(Some(newProject))
+      rulesDAO.createModule(parameters.projectName, name).openOrThrowException("Error creating module")
 
       SetHtml(parameters.listContainerId, renderModulesVar.is.get.applyAgain(parameters)) &
         Run("pack();")
@@ -66,25 +56,15 @@ class ProjectMenu extends RulesDAOProvider with JQueryTabs {
     } yield result).getOrElse(Noop)
   }
 
-  /*private def updateRules(projectName: String, moduleName: String) : JsCmd = {
-    LiftRulesUtils.beforeContentChange(
-      SetHtml("content", RulesListEditor.embed(Map("projectName" -> projectName, "moduleName" -> moduleName))) &
-      Run("$.ruleEditor = undefined;")
-    )
-  }
-*/
   private def renderModules(parameters : Parameters) =
     ".list *" #> modules(parameters.projectName).map(module =>
       ".select-item [onClick]" #> ajaxInvoke(() => updateModule(parameters, module.name)) &
       ".select-item *" #> module.name &
-      //".list-rules [onClick]" #> ajaxInvoke(() => updateRules(parameters.projectName, module.name)) &
-      //".modules-buttons [id]" #> modulesFinder.getDOMId(module.name) &
       ".modules-buttons [style+]" #> "display: none;" &
       ".del-from-list [onClick]" #> LiftUtils.bootboxConfirm(s"Are you sure to delete module ${module.name}?",
           () => delModule(parameters, module.name))
   )
 
-  // argument is listContainerId,projectName
   private object renderModulesVar extends RequestVar[Option[MemoizeTransformWithArg[Parameters]]](None)
 
   def render = {
