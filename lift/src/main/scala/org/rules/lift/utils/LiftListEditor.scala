@@ -6,7 +6,7 @@ import net.liftweb.common.{Failure, Full, Empty, Box}
 import net.liftweb.http.SHtml._
 import net.liftweb.http._
 import net.liftweb.http.js.JE.{JsVar, JsRaw}
-import net.liftweb.http.js.JsCmd
+import net.liftweb.http.js.{JsExp, JsCmd}
 import net.liftweb.http.js.JsCmds._
 import net.liftweb.json.{Serialization, DefaultFormats}
 import net.liftweb.json.JsonAST.{JString, JArray, JObject, JValue}
@@ -118,7 +118,10 @@ trait LiftListEditor[T] {
   }
 
   def embed(attributes: Map[String,String]) = {
-    attributes.foldLeft(template){ (actual, tuple) => actual % Attribute(None, tuple._1, Text(tuple._2), scala.xml.Null) }
+    println(getClass.getSimpleName + ".embed " + attributes)
+    val viewId = UUID.randomUUID().toString
+    val fragment = attributes.foldLeft(template){ (actual, tuple) => actual % Attribute(None, tuple._1, Text(tuple._2), scala.xml.Null) }
+    EmbeddedLiftListEditor(viewId, fragment % Attribute(None, "viewId", Text(viewId), scala.xml.Null))
   }
 
   protected lazy val schema = {
@@ -198,15 +201,25 @@ trait LiftListEditor[T] {
       state.itemsGroup.select(id)
   }
 
-  def render() = {
-    val viewId = UUID.randomUUID().toString
+  def onClose(viewId: String, confirmMessage: String) =
+    Run(s"""
+        var view = $$.liftViews['$viewId'];
+        if (view.hasUnsavedChanges()) {
+          return confirm('$confirmMessage');
+        } else {
+          return true;
+        }
+    """.stripMargin)
 
+  def render() = {
     val attributes = S.attrs.map( attr =>
       attr match {
         case (Left(key), value) => (key -> value)
         case (Right((namespace, key)), value) => (namespace + ":" + key -> value)
       }
     ).toMap
+
+    val viewId = attributes("viewId")
 
     val itemFinder = getItemFinder(attributes)
     val itemsGroup = getItemsGroup(attributes, itemFinder)

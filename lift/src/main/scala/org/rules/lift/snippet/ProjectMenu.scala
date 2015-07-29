@@ -3,6 +3,7 @@ package org.rules.lift.snippet
 import java.util.UUID
 
 import net.liftweb.common.Full
+import net.liftweb.http.js.JE.{AnonFunc, JsRaw}
 import net.liftweb.http.js.JsCmd
 import net.liftweb.http._
 import net.liftweb.http.SHtml._
@@ -29,24 +30,11 @@ class ProjectMenu extends RulesDAOProvider with JQueryTabs {
   private def modules(projectName: String) = rulesDAO.getModules(projectName).getOrElse(Seq.empty)
 
   private def updateModule(parameters: Parameters, name: String) = {
-    addTab(parameters.tabContentId, name,
-      () => RulesListEditor.embed(Map("projectName" -> parameters.projectName, "moduleName" ->name))
-    )
-/*    val deselect = RulesState.currentModuleName match {
-      case Some(module) => moduleGroup.deSelect(module)
-      case _ => Noop
-    }
-    RulesState.setCurrentModuleName(name)
+    // lazy so it's not called if the tab already exists
+    lazy val embedded = RulesListEditor.embed(Map("projectName" -> parameters.projectName, "moduleName" -> name))
 
-    // TODO cleanup of resources
-    Run(SetHtml("content", Text(""))) &
-      deselect &
-      moduleGroup.select(name) &
-      Run("pack();")
-    //Run(js)
-    */
-    //println("update module " + name + " parameters " + parameters)
-    //Noop
+    addTab(parameters.tabContentId, name, () => embedded.fragment,
+      (name, contentId) => RulesListEditor.onClose(embedded.viewID, "There are pending changes. Close anyway?"))
   }
 
   private def addModuleCall(parameters: Parameters)(name: String) = {
@@ -78,18 +66,18 @@ class ProjectMenu extends RulesDAOProvider with JQueryTabs {
     } yield result).getOrElse(Noop)
   }
 
-  private def updateRules(projectName: String, moduleName: String) : JsCmd = {
+  /*private def updateRules(projectName: String, moduleName: String) : JsCmd = {
     LiftRulesUtils.beforeContentChange(
       SetHtml("content", RulesListEditor.embed(Map("projectName" -> projectName, "moduleName" -> moduleName))) &
       Run("$.ruleEditor = undefined;")
     )
   }
-
+*/
   private def renderModules(parameters : Parameters) =
     ".list *" #> modules(parameters.projectName).map(module =>
       ".select-item [onClick]" #> ajaxInvoke(() => updateModule(parameters, module.name)) &
       ".select-item *" #> module.name &
-      ".list-rules [onClick]" #> ajaxInvoke(() => updateRules(parameters.projectName, module.name)) &
+      //".list-rules [onClick]" #> ajaxInvoke(() => updateRules(parameters.projectName, module.name)) &
       //".modules-buttons [id]" #> modulesFinder.getDOMId(module.name) &
       ".modules-buttons [style+]" #> "display: none;" &
       ".del-from-list [onClick]" #> LiftUtils.bootboxConfirm(s"Are you sure to delete module ${module.name}?",

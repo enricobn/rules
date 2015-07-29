@@ -2,8 +2,10 @@ package org.rules.lift.utils
 
 import java.util.UUID
 
+import net.liftweb.http.js.JE.{AnonFunc, JsVar, JsRaw}
 import net.liftweb.http.js.JsCmds.{SetHtml, Run}
 import net.liftweb.http.SHtml._
+import net.liftweb.http.js.{JsCmd, JsExp}
 import net.liftweb.util.Helpers._
 
 import scala.xml.NodeSeq
@@ -13,8 +15,36 @@ import scala.xml.NodeSeq
  */
 trait JQueryTabs {
 
-  def addTab(tabContainerId: String, name: String, content: () => NodeSeq) = {
+  def addTab(tabContainerId: String, name: String, content: () => NodeSeq,
+             onClose: (JsExp, JsExp) => JsCmd = (_,_) => Run("return true;")) = {
     val newTabId = UUID.randomUUID().toString
+
+    // lazy, so onClose is not evaluated if not required, since addCloseAndRefresh is used only in the ajaxCall
+    // if the tab does not exists
+    lazy val addCloseAndRefresh = Run(
+      s"""
+        // close icon: removing the tab on click
+        $$('div#$tabContainerId > ul li:last').on("click", "> span.ui-icon-close", function() {
+          var name = "$name";
+          var contentId = $$(this).parent().attr( "aria-controls" );
+          var f = ${AnonFunc("name,contentId", onClose(JsVar("name"), JsVar("contentId"))).toJsCmd};
+          if (f()) {
+            $$(this).parent().remove();
+            $$( "#" + contentId ).remove();
+            $$( "#$tabContainerId").tabs( "refresh" );
+            var tabCount = $$('#$tabContainerId >ul >li').size();
+            if (tabCount == 0) {
+              $$( "#$tabContainerId" ).hide();
+            }
+          }
+        });
+        /* I must use > ul since I want direct children, not all (nested tabs)*/
+        var last = $$('div#$tabContainerId > ul li:last').index()
+        $$( "div#$tabContainerId" ).tabs( "refresh" );
+        $$( "div#$tabContainerId" ).tabs({active: last});
+        $$( "div#$tabContainerId" ).show();
+      """.stripMargin)
+
     Run(
       s"""
         /* I must use > ul since I want direct children, not all (nested tabs)*/
@@ -38,16 +68,12 @@ trait JQueryTabs {
           $$( "div#$tabContainerId" ).append(
             "<div id='$newTabId' style='height: 100%;'></div>"
           );
-          ${ajaxCall("undefined", (_) => SetHtml(newTabId, content()))._2.toJsCmd}
-        """.stripMargin) &
-        Run(
-          s"""
-            /* I must use > ul since I want direct children, not all (nested tabs)*/
-            var last = $$('div#$tabContainerId > ul li:last').index()
-            $$( "div#$tabContainerId" ).tabs( "refresh" );
-            $$( "div#$tabContainerId" ).tabs({active: last});
-            $$( "div#$tabContainerId" ).show();
-        }""".stripMargin)
+          ${ajaxCall("undefined", (_) =>
+            SetHtml(newTabId, content()) &
+            addCloseAndRefresh)._2.toJsCmd
+          }
+        }
+     """)
   }
 
   def createTabs(where: String, tabContainerId: String) =
@@ -57,17 +83,7 @@ trait JQueryTabs {
       </div>) &
       Run(
         s"""
-          var tabs = $$( "#$tabContainerId" ).tabs();
-          // close icon: removing the tab on click
-          tabs.delegate( "span.ui-icon-close", "click", function() {
-            var panelId = $$( this ).closest( "li" ).remove().attr( "aria-controls" );
-            $$( "#" + panelId ).remove();
-            tabs.tabs( "refresh" );
-            var tabCount = $$('#$tabContainerId >ul >li').size();
-            if (tabCount == 0) {
-              $$( "#$tabContainerId" ).hide();
-            }
-          });
+          $$( "#$tabContainerId" ).tabs()
           $$( "#$tabContainerId" ).hide();
         """.stripMargin
       )

@@ -4,7 +4,7 @@ import net.liftweb.common.{Box, Failure, Full}
 import net.liftweb.http.S
 import net.liftweb.http.SHtml._
 import net.liftweb.http.js.JE.JsVar
-import net.liftweb.http.js.JsCmd
+import net.liftweb.http.js.{JsCmds, JsCmd}
 import net.liftweb.http.js.JsCmds.Run
 
 import scala.xml.NodeSeq
@@ -30,10 +30,12 @@ object LiftUtils {
         });
         """)
 
-  def bootboxConfirm(caption: String, cmd: JsCmd) =
+  def bootboxConfirm(caption: String, yesCmd: JsCmd, noCmd: JsCmd = JsCmds.Noop) =
     Run(s"""bootbox.confirm("${caption}", function(result) {
           if(result) {
-            ${cmd.toJsCmd};
+            ${yesCmd.toJsCmd};
+          } else {
+            ${noCmd.toJsCmd};
           }
         });
         """)

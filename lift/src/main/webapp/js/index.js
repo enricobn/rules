@@ -132,7 +132,7 @@ function editInit(viewId, editorContainer, schema, onChange) {
         // TODO do it better
         alert("Error");
     };
-*/
+
     view.contentListener = new Object();
     view.contentListener.beforeContentChange = function() {
         if (Object.keys(view.changed).length > 0 || view.deleted.length > 0) {
@@ -142,6 +142,10 @@ function editInit(viewId, editorContainer, schema, onChange) {
         }
     };
    addContentListener(view.contentListener);
+   */
+    view.hasUnsavedChanges = function() {
+        return Object.keys(view.changed).length > 0 || view.deleted.length > 0;
+    };
 }
 
 function editAfterSave(viewId) {
@@ -156,7 +160,7 @@ function editDestroy(viewId) {
     var view = $.liftViews[viewId];
     view.jsonEditor.off('change', view.changeListener);
     view.jsonEditor.destroy();
-    removeContentListener(view.contentListener);
+    /*removeContentListener(view.contentListener);*/
 }
 
 $(document).ready(function () {
