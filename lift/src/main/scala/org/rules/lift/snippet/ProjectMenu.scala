@@ -27,7 +27,10 @@ class ProjectMenu extends RulesDAOProvider with JQueryTabs {
     lazy val embedded = RulesListEditor.embed(Map("projectName" -> parameters.projectName, "moduleName" -> name))
 
     addTab(parameters.tabContentId, name, () => embedded.fragment,
-      (name, contentId) => RulesListEditor.onClose(embedded.viewID, "There are pending changes. Close anyway?"))
+      (name, contentId) =>
+        JsIf(RulesListEditor.hasUnsavedChanges(embedded.viewID), Run("return confirm('There are pending changes. Close anyway?');"),
+          Run("return true;"))
+    )
   }
 
   private def addModuleCall(parameters: Parameters)(name: String) = {
