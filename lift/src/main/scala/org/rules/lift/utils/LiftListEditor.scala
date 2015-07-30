@@ -5,7 +5,7 @@ import java.util.UUID
 import net.liftweb.common.{Failure, Full, Empty, Box}
 import net.liftweb.http.SHtml._
 import net.liftweb.http._
-import net.liftweb.http.js.JE.{Call, JsVar, JsRaw}
+import net.liftweb.http.js.JE.{Str, Call, JsVar, JsRaw}
 import net.liftweb.http.js.{JsExp, JsCmd}
 import net.liftweb.http.js.JsCmds._
 import net.liftweb.json.{Serialization, DefaultFormats}
@@ -201,8 +201,18 @@ trait LiftListEditor[T] {
       state.itemsGroup.select(id)
   }
 
-  def hasUnsavedChanges(viewId: String) : JsExp =
-    JsRaw(s"$$.liftViews['$viewId'].hasUnsavedChanges()")
+  def hasUnsavedChanges(viewId: JsExp) : JsExp =
+    JsRaw(
+      s"""
+        (function () {
+          if (typeof $$.liftViews == 'undefined') {
+             return false;
+          } else {
+            return $$.liftViews[${viewId.toJsCmd}].hasUnsavedChanges();
+          }
+        } ())
+      """.stripMargin
+    )
 
   def render() = {
     val attributes = S.attrs.map( attr =>

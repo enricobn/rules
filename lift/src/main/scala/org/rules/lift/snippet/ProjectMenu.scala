@@ -3,14 +3,14 @@ package org.rules.lift.snippet
 import java.util.UUID
 
 import net.liftweb.common.Full
-import net.liftweb.http.js.JE.{AnonFunc, JsRaw}
-import net.liftweb.http.js.JsCmd
+import net.liftweb.http.js.JE.{Str, AnonFunc, JsRaw}
+import net.liftweb.http.js.{JsExp, JsCmd}
 import net.liftweb.http._
 import net.liftweb.http.SHtml._
 import net.liftweb.http.js.JsCmds._
 import net.liftweb.util.Helpers._
 import org.rules.lift._
-import org.rules.lift.utils.{JQueryTabs, MemoizeTransformWithArg, LiftRulesUtils, LiftUtils}
+import org.rules.lift.utils._
 
 private case class Parameters(tabContentId: String, layoutContentId: String,
     layoutCenterContentId: String, listContainerId: String, projectName: String)
@@ -19,7 +19,7 @@ private case class Parameters(tabContentId: String, layoutContentId: String,
  * Created by enrico on 6/22/15.
  * project-menu.html
  */
-class ProjectMenu extends RulesDAOProvider with JQueryTabs {
+object ProjectMenu extends RulesDAOProvider with JQueryTabs with JsMemo {
   private def modules(projectName: String) = rulesDAO.getModules(projectName).openOrThrowException("Error getting modules")
 
   private def updateModule(parameters: Parameters, name: String) = {
@@ -28,10 +28,28 @@ class ProjectMenu extends RulesDAOProvider with JQueryTabs {
 
     addTab(parameters.tabContentId, name, () => embedded.fragment,
       (name, contentId) =>
-        JsIf(RulesListEditor.hasUnsavedChanges(embedded.viewID), Run("return confirm('There are pending changes. Close anyway?');"),
+        JsIf(RulesListEditor.hasUnsavedChanges(Str(embedded.viewID)), Run("return confirm('There are pending changes. Close anyway?');"),
           Run("return true;"))
-    )
+    ) &
+    putToMap(parameters.projectName, name, Str(embedded.viewID))
   }
+
+  def hasUnsavedChanges(projectName: String) : JsExp =
+    JsRaw(
+      s"""
+          (function () {
+            var m = ${getMap(projectName).toJsCmd};
+            if (typeof m == 'undefined') {
+              return false;
+            }
+            for (var key in m) {
+              if (${RulesListEditor.hasUnsavedChanges(JsRaw("m[key]")).toJsCmd}) {
+                return true;
+              }
+            }
+            return false;
+          }())
+      """.stripMargin)
 
   private def addModuleCall(parameters: Parameters)(name: String) = {
     if (!name.isEmpty) {

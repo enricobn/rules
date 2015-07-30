@@ -160,6 +160,7 @@ function editDestroy(viewId) {
     var view = $.liftViews[viewId];
     view.jsonEditor.off('change', view.changeListener);
     view.jsonEditor.destroy();
+    delete $.liftViews[viewId];
     /*removeContentListener(view.contentListener);*/
 }
 

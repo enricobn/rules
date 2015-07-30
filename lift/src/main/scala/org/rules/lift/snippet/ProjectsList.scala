@@ -6,7 +6,7 @@ import java.util.UUID
 import net.liftweb.common.Loggable
 import net.liftweb.http.SHtml._
 import net.liftweb.http._
-import net.liftweb.http.js.JE.JsVar
+import net.liftweb.http.js.JE.{JsRaw, Str, JsVar}
 import net.liftweb.http.js.JsCmd
 import net.liftweb.http.js.JsCmds._
 import net.liftweb.util.CssSelectorParser
@@ -28,7 +28,22 @@ object ProjectsList extends Loggable with RulesDAOProvider with JQueryTabs {
     //val newTabId = UUID.randomUUID().toString
     LiftUtils.getOrElseError[XMLProject,JsCmd](
       rulesDAO.getProject(projectName),
-      (project) => addTab("projects-tabs", projectName, () => <lift:embed what="/project-menu" projectName={projectName}/>),
+      (project) => addTab("projects-tabs", projectName, () => <lift:embed what="/project-menu" projectName={projectName}/>,
+        (name, contentId) => Run(
+          s"""
+          var r;
+          ${JsIf(ProjectMenu.hasUnsavedChanges(projectName),
+              Run("r = confirm('There are pending changes. Close anyway?');"),
+              Run("r = true;")
+            ).toJsCmd
+          }
+          if (r) {
+            ${ProjectMenu.clearMap(projectName).toJsCmd}
+          }
+          return r;
+          """.stripMargin
+        )
+      ),
       s"""Failed to load project "$projectName"""",
       Noop)
   }
