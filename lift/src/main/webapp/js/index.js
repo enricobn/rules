@@ -6,7 +6,7 @@ function pack() {
     var left = $('#nav').outerWidth() + margin;
     var top = $('#header').outerHeight() + margin;
     //console.log($('#nav').outerWidth(true));
-    console.log('height=' + height + ', left=' + left + ', top=' + top);
+    //console.log('height=' + height + ', left=' + left + ', top=' + top);
     $('#nav').height(height);
     $('#content').height(height);
     $('#content').width(width);

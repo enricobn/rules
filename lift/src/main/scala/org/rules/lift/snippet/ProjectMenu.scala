@@ -6,11 +6,14 @@ import net.liftweb.common.Full
 import net.liftweb.http.js.JE.{Str, AnonFunc, JsRaw}
 import net.liftweb.http.js.{JsExp, JsCmd}
 import net.liftweb.http._
+import net.liftweb.http.js.JsExp._
 import net.liftweb.http.SHtml._
 import net.liftweb.http.js.JsCmds._
+import net.liftweb.json.JsonAST.{JObject, JNothing, JValue}
 import net.liftweb.util.Helpers._
 import org.rules.lift._
 import org.rules.lift.utils._
+import net.liftweb.json.JsonDSL._
 
 private case class Parameters(tabContentId: String, layoutContentId: String,
     layoutCenterContentId: String, listContainerId: String, projectName: String)
@@ -28,10 +31,12 @@ object ProjectMenu extends RulesDAOProvider with JQueryTabs with JsMemo {
 
     addTab(parameters.tabContentId, name, () => embedded.fragment,
       (name, contentId) =>
-        JsIf(RulesListEditor.hasUnsavedChanges(Str(embedded.viewID)), Run("return confirm('There are pending changes. Close anyway?');"),
-          Run("return true;"))
-    ) &
-    putToMap(parameters.projectName, name, Str(embedded.viewID))
+        JsIf(RulesListEditor.hasUnsavedChanges(Str(embedded.viewID)),
+          Run("return confirm('There are pending changes. Close anyway?');"),
+          Run("return true;")
+        ),
+      () => putToMap(parameters.projectName, name, Str(embedded.viewID))
+    )
   }
 
   def hasUnsavedChanges(projectName: String) : JsExp =
@@ -56,7 +61,11 @@ object ProjectMenu extends RulesDAOProvider with JQueryTabs with JsMemo {
       rulesDAO.createModule(parameters.projectName, name).openOrThrowException("Error creating module")
 
       SetHtml(parameters.listContainerId, renderModulesVar.is.get.applyAgain(parameters)) &
-        Run("pack();")
+      Run(
+        s"""
+           var layout = $$('#${parameters.layoutContentId}').layout();
+           layout.resizeAll();
+        """)
     } else {
       Noop
     }
@@ -72,7 +81,11 @@ object ProjectMenu extends RulesDAOProvider with JQueryTabs with JsMemo {
       result <- Full(
         RulesState.moduleDeleted(name) &
         SetHtml(parameters.listContainerId, renderModulesVar.is.get.applyAgain(parameters)) &
-        Run("pack();")
+        Run(
+          s"""
+             var layout = $$('#${parameters.layoutContentId}').layout();
+             layout.resizeAll();
+          """)
       )
     } yield result).getOrElse(Noop)
   }
@@ -98,9 +111,16 @@ object ProjectMenu extends RulesDAOProvider with JQueryTabs with JsMemo {
         s"""
           $$('[data-toggle="tooltip"]').tooltip();
           var layout = $$('#${parameters.layoutContentId}').layout({ applyDefaultStyles: false, west__size: "auto" });
-          layout.resizeAll();
         """.stripMargin) &
-      createTabs(parameters.layoutCenterContentId, parameters.tabContentId)
+      createTabs(parameters.layoutCenterContentId, parameters.tabContentId, "heightStyle" -> "fillNoScroll" ) &
+      Run(
+        s"""
+          layout.resizeAll();
+          $$(window).on('resize', function() {
+            layout.resizeAll();
+          });
+        """
+      )
     )
 
     ".list-container *" #> renderModulesVar.is.get.apply(parameters) &

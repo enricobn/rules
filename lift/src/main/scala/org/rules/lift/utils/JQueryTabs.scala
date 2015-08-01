@@ -5,7 +5,11 @@ import java.util.UUID
 import net.liftweb.http.js.JE.{AnonFunc, JsVar, JsRaw}
 import net.liftweb.http.js.JsCmds.{SetHtml, Run}
 import net.liftweb.http.SHtml._
-import net.liftweb.http.js.{JsCmd, JsExp}
+import net.liftweb.http.js.{JsCmds, JsCmd, JsExp}
+import net.liftweb.http.js.JsExp._
+import net.liftweb.json.JsonAST._
+import net.liftweb.json.JsonDSL._
+import net.liftweb.json.{DefaultFormats, Serialization}
 import net.liftweb.util.Helpers._
 
 import scala.xml.NodeSeq
@@ -16,7 +20,8 @@ import scala.xml.NodeSeq
 trait JQueryTabs {
 
   def addTab(tabContainerId: String, name: String, content: () => NodeSeq,
-             onClose: (JsExp, JsExp) => JsCmd = (_,_) => Run("return true;")) = {
+             onClose: (JsExp, JsExp) => JsCmd = (_,_) => Run("return true;"),
+             ifAdded: () => JsCmd = () => JsCmds.Noop) = {
     val newTabId = UUID.randomUUID().toString
 
     // lazy, so onClose is not evaluated if not required, since addCloseAndRefresh is used only in the ajaxCall
@@ -40,9 +45,9 @@ trait JQueryTabs {
         });
         /* I must use > ul since I want direct children, not all (nested tabs)*/
         var last = $$('div#$tabContainerId > ul li:last').index()
+        $$( "div#$tabContainerId" ).show();
         $$( "div#$tabContainerId" ).tabs( "refresh" );
         $$( "div#$tabContainerId" ).tabs({active: last});
-        $$( "div#$tabContainerId" ).show();
       """.stripMargin)
 
     Run(
@@ -66,27 +71,32 @@ trait JQueryTabs {
             "<li><a href='#$newTabId'>$name</a><span class='ui-icon ui-icon-close' role='presentation'>Remove Tab</span></li>"
           );
           $$( "div#$tabContainerId" ).append(
-            "<div id='$newTabId' style='height: 100%;'></div>"
+            "<div id='$newTabId'></div>"
           );
           ${ajaxCall("undefined", (_) =>
               SetHtml(newTabId, content()) &
-              addCloseAndRefresh
-            )._2.toJsCmd
+              addCloseAndRefresh &
+              ifAdded()
+      )._2.toJsCmd
           }
         }
      """)
   }
 
-  def createTabs(where: String, tabContainerId: String) =
+  def createTabs(where: String, tabContainerId: String, options: JValue = "heightStyle" -> "fill") =
     SetHtml(where,
-      <div id={tabContainerId} style="height: 100%">
+      <div id={tabContainerId}>
         <ul></ul>
       </div>
     ) &
     Run(
       s"""
-        $$( "#$tabContainerId" ).tabs()
-        $$( "#$tabContainerId" ).hide();
-      """.stripMargin
+      var tabs = $$( "#$tabContainerId" ).tabs(${options.toJsCmd})
+      $$( "#$tabContainerId" ).hide();
+      $$(window).on('resize', function () {
+        tabs.tabs('refresh');
+      });
+    """.stripMargin
     )
+
 }

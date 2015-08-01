@@ -19,14 +19,13 @@ object RulesListEditor extends Loggable with RulesDAOProvider with LiftListEdito
 
   protected def getId(item: XMLRule) = item.id
 
-  def toJson(item: XMLRule): JValue = {
+  def toJson(item: XMLRule): JValue =
     ("id" -> item.id) ~
     ("name" -> item.name) ~
     ("tags" -> item.tags) ~
     ("requires" -> item.requires.map { r => ("token" -> r.token) ~ ("tags" -> r.tags.toString) }) ~
     ("provides" -> item.provides.map { p => ("token" -> p.token) ~ ("value" -> p.value) }) ~
     ("run" -> item.run)
-  }
 
   def fromJson(jsonItem: JValue) : XMLRule = {
     implicit val formats = DefaultFormats

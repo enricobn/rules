@@ -24,7 +24,7 @@ import scala.xml.{NodeSeq, Text}
  */
 object ProjectsList extends Loggable with RulesDAOProvider with JQueryTabs {
 
-  private def updateProjectMenu(projectName: String) : JsCmd = {
+  private def updateProjectMenu(projectName: String) : JsCmd =
     //val newTabId = UUID.randomUUID().toString
     LiftUtils.getOrElseError[XMLProject,JsCmd](
       rulesDAO.getProject(projectName),
@@ -46,7 +46,6 @@ object ProjectsList extends Loggable with RulesDAOProvider with JQueryTabs {
       ),
       s"""Failed to load project "$projectName"""",
       Noop)
-  }
 
   private def addProject() = {
     LiftUtils.bootboxPrompt("Project name", addProjectByName)
