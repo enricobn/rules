@@ -77,9 +77,9 @@ trait LiftListEditor[T] {
   
   protected val fragment =
       <div class="list-main-container" style="height: 100%;">
-        <div class="bg2" style="min-height: 50px;">
+        <div class="bg2 ui-layout-north">
           <div class="btn btn-primary glyphicon glyphicon-floppy-save save-items"
-               style="margin-left: 10px; margin-top: 5px; float: left;"
+               style="margin-left: 10px; margin-top: 5px; margin-bottom: 5px; float: left;"
                data-toggle="tooltip" title="Save"></div>
           <div class="btn btn-primary btn-xs glyphicon glyphicon-plus add-item"
                data-toggle="tooltip" title="Add"
@@ -89,16 +89,18 @@ trait LiftListEditor[T] {
                style="margin-left: 10px; margin-top: 5px; float: left;"></div>
         </div>
 
-        <div class="clear: left; border-bg1 bg3" style="height: 30%; overflow: auto">
-          <div class="list-container">
-            <div class="list-elements">
-              <div class="select-item">item</div>
+        <div class="bg2 ui-layout-center" style="height: 100%;">
+          <div class="clear: left; border-bg1 bg3" style="height: 30%; overflow: auto">
+            <div class="list-container">
+              <div class="list-elements">
+                <div class="select-item">item</div>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div class="border-bg1 bg3" style="height: 70%; overflow: auto; margin-bottom: 10px; clear: left;">
-          <div class="detail-editor" style="margin-left: 10px; margin-right: 10px; margin-top: 10px;">detail editor</div>
+          <div class="border-bg1 bg3" style="height: 70%; overflow: auto; margin-bottom: 10px; clear: left;">
+            <div class="detail-editor" style="margin-left: 10px; margin-right: 10px; margin-top: 10px;">detail editor</div>
+          </div>
         </div>
       </div>
 
@@ -121,6 +123,13 @@ trait LiftListEditor[T] {
     println(getClass.getSimpleName + ".embed " + attributes)
     val viewId = UUID.randomUUID().toString
     val fragment = attributes.foldLeft(template){ (actual, tuple) => actual % Attribute(None, tuple._1, Text(tuple._2), scala.xml.Null) }
+    S.appendJs(Run(
+      s"""
+          var layout = $$('#$viewId').layout({ applyDefaultStyles: false, north__size: \"auto\" });
+          $$(window).on("resize", function() {
+            layout.resizeAll();
+          });
+      """))
     EmbeddedLiftListEditor(viewId, fragment % Attribute(None, "viewId", Text(viewId), scala.xml.Null))
   }
 
