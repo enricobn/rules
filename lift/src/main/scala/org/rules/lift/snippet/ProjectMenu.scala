@@ -112,7 +112,7 @@ object ProjectMenu extends RulesDAOProvider with JQueryTabs with JsMemo {
           $$('[data-toggle="tooltip"]').tooltip();
           var layout = $$('#${parameters.layoutContentId}').layout({ applyDefaultStyles: false, west__size: "auto" });
         """.stripMargin) &
-      createTabs(parameters.layoutCenterContentId, parameters.tabContentId, "heightStyle" -> "fillNoScroll" ) &
+      createTabs(parameters.layoutCenterContentId, parameters.tabContentId, "heightStyle" -> "fill" ) &
       Run(
         s"""
           layout.resizeAll();

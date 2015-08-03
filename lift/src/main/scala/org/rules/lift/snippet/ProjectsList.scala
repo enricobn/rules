@@ -16,8 +16,8 @@ import org.rules.lift.model.RulesDAO
 import org.rules.lift.utils.{JQueryTabs, LiftUtils}
 import org.rules.rule.Logged
 import org.rules.rule.xml.{XMLProjectFile, XMLProject}
+import net.liftweb.json.JsonDSL._
 
-import scala.xml.{NodeSeq, Text}
 
 /**
  * Created by enrico on 6/25/15.
@@ -84,7 +84,7 @@ object ProjectsList extends Loggable with RulesDAOProvider with JQueryTabs {
   def render() = {
     renderProjectsVar.set(Some(renderProjects))
     S.appendJs(Run("""$('[data-toggle="tooltip"]').tooltip();""") &
-      createTabs("content", "projects-tabs")
+      createTabs("content", "projects-tabs", "heightStyle" -> "fill")
     )
 
     "#projects-list-container *" #> renderProjects &

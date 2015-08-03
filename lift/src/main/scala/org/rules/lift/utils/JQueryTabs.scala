@@ -83,7 +83,7 @@ trait JQueryTabs {
      """)
   }
 
-  def createTabs(where: String, tabContainerId: String, options: JValue = "heightStyle" -> "fill") =
+  def createTabs(where: String, tabContainerId: String, options: JValue = JObject(List.empty)) =
     SetHtml(where,
       <div id={tabContainerId}>
         <ul></ul>
