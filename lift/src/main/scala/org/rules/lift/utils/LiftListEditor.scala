@@ -223,6 +223,15 @@ trait LiftListEditor[T] {
       """.stripMargin
     )
 
+  def clear(viewId: JsExp) =
+    Run(
+      s"""
+         |if (typeof $$.liftViews != 'undefined') {
+         |  delete $$.liftViews[${viewId.toJsCmd}];
+         |}
+       """.stripMargin
+    )
+
   def render() = {
     val attributes = S.attrs.map( attr =>
       attr match {

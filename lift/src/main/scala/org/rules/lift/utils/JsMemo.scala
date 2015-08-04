@@ -1,5 +1,6 @@
 package org.rules.lift.utils
 
+import net.liftweb.http.S
 import net.liftweb.http.js.JE.{JsRaw, Str}
 import net.liftweb.http.js.{JsExp, JsCmd}
 import net.liftweb.http.js.JsCmds.Run
@@ -7,82 +8,53 @@ import net.liftweb.http.js.JsCmds.Run
 /**
  * Created by enrico on 7/30/15.
  */
-trait JsMemo {
-  def id = System.identityHashCode(this)
+object JsMemo {
+  def apply(scope: AnyRef, keys: Int) : JsMemo = JsMemo(System.identityHashCode(scope).toString, keys)
+}
 
-  def clearMap(mapId: Str) =
+case class JsMemo(id: String, keys: Int) {
+
+  def clear(key: Str*) =
+    if (key.isEmpty) {
+      Run(
+        s"""
+          window.jsmemo.put("$id", new JsMemoMultipleHashMap($keys));
+        """)
+    } else {
+      Run(
+        s"""
+          var memo = window.jsmemo.get("$id");
+          if (memo) {
+            memo.remove(${key.map(_.toJsCmd).mkString(",")});
+          }
+        """.stripMargin)
+    }
+
+  def put(key: Str*)(value: Str) = {
+    if (key.length != keys) {
+      throw new IllegalArgumentException(s"expected $keys keys, but got ${key.length}")
+    }
+    println(key.map(_.toJsCmd).mkString(","), value)
     Run(
       s"""
-        if (typeof $$.memo$id != 'undefined') {
-          delete $$.memo$id[${mapId.toJsCmd}];
+        var memo = window.jsmemo.get("$id");
+        if (!memo) {
+          memo = new JsMemoMultipleHashMap($keys);
+          window.jsmemo.put("$id", memo);
         }
-       """.stripMargin)
-
-  def clear() =
-    Run(s"$$.memo$id = 'undefined';")
-
-  def put(key: Str, value: Str) =
-    Run(
-      s"""
-        if (typeof $$.memo$id == 'undefined') {
-          $$.memo$id = new Object();
-        }
-        $$.memo$id[${key.toJsCmd}] = ${value.toJsCmd};
+        memo.put(${key.map(_.toJsCmd).mkString(",")}, ${value.toJsCmd});
       """.stripMargin
     )
+  }
 
-  def get(key: Str) =
+  def get(key: Str*) =
     JsRaw(
       s"""
-        (function() {
-          if (typeof $$.memo$id == 'undefined') {
-            return 'undefined';
-          } else {
-            return $$.memo$id[${key.toJsCmd}];
+        (function () {
+          var memo = window.jsmemo.get("$id");
+          if (memo) {
+            return memo.get(${key.map(_.toJsCmd).mkString(",")});
           }
-        }())
-      """.stripMargin
-    )
-
-  def putToMap(mapId: Str, key: Str, value: Str) =
-    Run(
-      s"""
-        if (typeof $$.memo$id == 'undefined') {
-          $$.memo$id = new Object();
-        }
-        if (!(${mapId.toJsCmd} in $$.memo$id)) {
-          $$.memo$id[${mapId.toJsCmd}] = new Object();
-        }
-        if (!(${key.toJsCmd} in $$.memo$id[${mapId.toJsCmd}])) {
-          $$.memo$id[${mapId.toJsCmd}][${key.toJsCmd}] = new Object();
-        }
-        $$.memo$id[${mapId.toJsCmd}][${key.toJsCmd}] = ${value.toJsCmd};
-      """.stripMargin
-    )
-
-  def getFromMap(mapId: Str, key: Str) =
-    JsRaw(
-      s"""
-        (function() {
-          if (typeof $$.memo$id == 'undefined') {
-            return 'undefined';
-          }
-          if (!(${mapId.toJsCmd} in $$.memo$id)) {
-            return 'undefined';
-          }
-          return $$.memo$id[${mapId.toJsCmd}][${key.toJsCmd}];
-        }())
-      """.stripMargin
-    )
-
-  def getMap(mapId: Str) =
-    JsRaw(
-      s"""
-        (function() {
-          if (typeof $$.memo$id == 'undefined') {
-            return 'undefined';
-          }
-          return $$.memo$id[${mapId.toJsCmd}];
         }())
       """.stripMargin
     )

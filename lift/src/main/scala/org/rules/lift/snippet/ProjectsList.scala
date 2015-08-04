@@ -31,16 +31,16 @@ object ProjectsList extends Loggable with RulesDAOProvider with JQueryTabs {
       (project) => addTab("projects-tabs", projectName, () => <lift:embed what="/project-menu" projectName={projectName}/>,
         (name, contentId) => Run(
           s"""
-          var r;
-          ${JsIf(ProjectMenu.hasUnsavedChanges(projectName),
-              Run("r = confirm('There are pending changes. Close anyway?');"),
-              Run("r = true;")
-            ).toJsCmd
-          }
-          if (r) {
-            ${ProjectMenu.clearMap(projectName).toJsCmd}
-          }
-          return r;
+             |var r;
+             |${JsIf(ProjectMenu.hasUnsavedChanges(projectName),
+                 Run("r = confirm('There are pending changes. Close anyway?');"),
+                 Run("r = true;")
+               ).toJsCmd
+             }
+             |if (r) {
+             |  ${ProjectMenu.clearProject(projectName).toJsCmd}
+             |}
+             |return r;
           """.stripMargin
         )
       ),

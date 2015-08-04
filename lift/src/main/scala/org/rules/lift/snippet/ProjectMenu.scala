@@ -22,7 +22,9 @@ private case class Parameters(tabContentId: String, layoutContentId: String,
  * Created by enrico on 6/22/15.
  * project-menu.html
  */
-object ProjectMenu extends RulesDAOProvider with JQueryTabs with JsMemo {
+object ProjectMenu extends RulesDAOProvider with JQueryTabs {
+  private val memo = JsMemo(this, 2)
+
   private def modules(projectName: String) = rulesDAO.getModules(projectName).openOrThrowException("Error getting modules")
 
   private def updateModule(parameters: Parameters, name: String) = {
@@ -30,30 +32,42 @@ object ProjectMenu extends RulesDAOProvider with JQueryTabs with JsMemo {
     lazy val embedded = RulesListEditor.embed(Map("projectName" -> parameters.projectName, "moduleName" -> name))
 
     addTab(parameters.tabContentId, name, () => embedded.fragment,
-      (name, contentId) =>
-        JsIf(RulesListEditor.hasUnsavedChanges(Str(embedded.viewID)),
-          Run("return confirm('There are pending changes. Close anyway?');"),
-          Run("return true;")
+      (nameExp, contentIdExp) =>
+        Run(
+          s"""
+             |var close = true;
+             |if (${RulesListEditor.hasUnsavedChanges(embedded.viewID).toJsCmd}) {
+             |  close = confirm('There are pending changes. Close anyway?');
+             |}
+             |if (close) {
+             |  ${RulesListEditor.clear(embedded.viewID).toJsCmd}
+             |  ${memo.clear(parameters.projectName, name).toJsCmd}
+             |}
+             |return close;
+           """.stripMargin
         ),
-      () => putToMap(parameters.projectName, name, Str(embedded.viewID))
+      () => memo.put(parameters.projectName, name)(embedded.viewID)
     )
   }
+
+  def clearProject(projectName: String) = memo.clear(projectName)
 
   def hasUnsavedChanges(projectName: String) : JsExp =
     JsRaw(
       s"""
-          (function () {
-            var m = ${getMap(projectName).toJsCmd};
-            if (typeof m == 'undefined') {
-              return false;
-            }
-            for (var key in m) {
-              if (${RulesListEditor.hasUnsavedChanges(JsRaw("m[key]")).toJsCmd}) {
-                return true;
-              }
-            }
-            return false;
-          }())
+         |(function () {
+         |  var m = ${memo.get(projectName).toJsCmd};
+         |  if (typeof m == 'undefined') {
+         |    return false;
+         |  }
+         |  var values = m.values();
+         |  for (var i in values) {
+         |    if (${RulesListEditor.hasUnsavedChanges(JsRaw("values[i]")).toJsCmd}) {
+         |      return true;
+         |    }
+         |  }
+         |  return false;
+         |}())
       """.stripMargin)
 
   private def addModuleCall(parameters: Parameters)(name: String) = {
@@ -63,9 +77,9 @@ object ProjectMenu extends RulesDAOProvider with JQueryTabs with JsMemo {
       SetHtml(parameters.listContainerId, renderModulesVar.is.get.applyAgain(parameters)) &
       Run(
         s"""
-           var layout = $$('#${parameters.layoutContentId}').layout();
-           layout.resizeAll();
-        """)
+           |var layout = $$('#${parameters.layoutContentId}').layout();
+           |layout.resizeAll();
+        """.stripMargin)
     } else {
       Noop
     }
@@ -83,9 +97,9 @@ object ProjectMenu extends RulesDAOProvider with JQueryTabs with JsMemo {
         SetHtml(parameters.listContainerId, renderModulesVar.is.get.applyAgain(parameters)) &
         Run(
           s"""
-             var layout = $$('#${parameters.layoutContentId}').layout();
-             layout.resizeAll();
-          """)
+             |var layout = $$('#${parameters.layoutContentId}').layout();
+             |layout.resizeAll();
+          """.stripMargin)
       )
     } yield result).getOrElse(Noop)
   }
@@ -109,17 +123,17 @@ object ProjectMenu extends RulesDAOProvider with JQueryTabs with JsMemo {
     S.appendJs(
       Run(
         s"""
-          $$('[data-toggle="tooltip"]').tooltip();
-          var layout = $$('#${parameters.layoutContentId}').layout({ applyDefaultStyles: false, west__size: "auto" });
+           |$$('[data-toggle="tooltip"]').tooltip();
+           |var layout = $$('#${parameters.layoutContentId}').layout({ applyDefaultStyles: false, west__size: "auto" });
         """.stripMargin) &
       createTabs(parameters.layoutCenterContentId, parameters.tabContentId, "heightStyle" -> "fill" ) &
       Run(
         s"""
-          layout.resizeAll();
-          $$(window).on('resize', function() {
-            layout.resizeAll();
-          });
-        """
+           |layout.resizeAll();
+           |$$(window).on('resize', function() {
+           |  layout.resizeAll();
+           |});
+        """.stripMargin
       )
     )
 
