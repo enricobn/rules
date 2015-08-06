@@ -28,10 +28,6 @@ object Dependencies {
 //  val jetty = "org.eclipse.jetty" % "jetty-webapp" % "8.1.7.v20120910"  %
 //      "container,test"
 
-  // don't use >= 9.3 since it's java 8
-  val jetty = "org.eclipse.jetty" % "jetty-server" % "9.2.13.v20150730" % "test"
-  val jettyWebApp = "org.eclipse.jetty" % "jetty-webapp" % "9.2.13.v20150730" % "test"
-
   //val orbit = "javax.servlet" % "javax.servlet-api" % "3.0.1" % "provided"
   //val orbit = "javax.servlet" % "javax.servlet-api" % "3.0.1" % "provided"
 //  val orbit = "org.eclipse.jetty.orbit" % "javax.servlet" % "3.0.0.v201112011016" %
@@ -76,6 +72,12 @@ object RulesBuild extends Build {
 
   // for sbt-dependency-graph plugin (dependency-tree in sbt)
   private val dependencyTreeSettings = net.virtualvoid.sbt.graph.Plugin.graphSettings
+
+  val jettyVersion = "9.2.13.v20150730"
+
+  // don't use >= 9.3 since it's java 8
+  val jetty = "org.eclipse.jetty" % "jetty-server" % jettyVersion % "test"
+  val jettyWebApp = "org.eclipse.jetty" % "jetty-webapp" % jettyVersion % "test"
 
   // Coffeescript plugin
 //  import coffeescript.Plugin._
