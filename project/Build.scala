@@ -25,22 +25,11 @@ object BuildSettings {
 object Dependencies {
   val liftVersion = "2.6"
 
-//  val jetty = "org.eclipse.jetty" % "jetty-webapp" % "8.1.7.v20120910"  %
-//      "container,test"
-
-  //val orbit = "javax.servlet" % "javax.servlet-api" % "3.0.1" % "provided"
-  //val orbit = "javax.servlet" % "javax.servlet-api" % "3.0.1" % "provided"
-//  val orbit = "org.eclipse.jetty.orbit" % "javax.servlet" % "3.0.0.v201112011016" %
-//      "container,compile" artifacts Artifact("javax.servlet", "jar", "jar")
-//  val liftWebKit = "net.liftweb" %% "lift-webkit" % liftVersion % "compile"
-
-
   val liftweb = Seq(
     "net.liftweb" %% "lift-webkit" % liftVersion % "compile->default",
     "net.liftweb" %% "lift-mapper" % liftVersion % "compile->default",
     "net.liftweb" %% "lift-wizard" % liftVersion % "compile->default")
 
-  //val selenium = "org.seleniumhq.selenium" % "selenium-java" % "2.23.1" % "test->default"
   val selenium = "org.seleniumhq.selenium" % "selenium-java" % "2.47.1" % "test->default"
 
   val logback = "ch.qos.logback" % "logback-classic" % "1.0.13"
@@ -90,12 +79,6 @@ object RulesBuild extends Build {
   autoScalaLibrary := false
   dependencyOverrides += "org.scala-lang" % "scala-library" % scala
 
-  //javaOptions += "-XX:MaxPermSize=512m"
-
-  //fork in run := true
-
-  //javaHome := sys.env.get("JAVA_HOME") map file
-
   val jv = sys.props("java.specification.version")
   if (jv != "1.7") {
     throw new RuntimeException("Expected java version 1.7 but was " + jv +
@@ -114,8 +97,6 @@ object RulesBuild extends Build {
     scalamock,
     jetty,
     jettyWebApp,
-//    jettyRunner,
-//    orbit,
     logback,
     selenium
   ) ++ liftweb
@@ -134,7 +115,7 @@ object RulesBuild extends Build {
       // ++= is needed, == overrides plugins dependencies!
       libraryDependencies ++= depsCore,
       scalacOptions ++= scalaBuildOptions
-    )
+    ) ++ dependencyTreeSettings
   )
 
   lazy val lift = Project(
