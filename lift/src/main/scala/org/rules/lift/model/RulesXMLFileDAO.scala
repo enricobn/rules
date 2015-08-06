@@ -10,8 +10,7 @@ import org.rules.rule.xml.{XMLModuleFile, XMLProjectFile, XMLRule}
 /**
  * Created by enrico on 6/24/15.
  */
-object RulesXMLFileDAO extends RulesDAO {
-  private val root = new File("data")
+case class RulesXMLFileDAO(root: File = new File("data")) extends RulesDAO {
   // TODO cache and update on changes
   private def fileProjects = root.listFiles().filter(_.isDirectory).sortWith(_.getName < _.getName)
     .map(XMLProjectFile.open(_)).collect{case Logged(Some(p), _) => p}

@@ -1,10 +1,13 @@
 package bootstrap.liftweb
 
+import java.io.File
+
 import net.liftweb.common.{Logger, Empty, Loggable, Full}
 import net.liftweb.http.js.{JsCmds, JsCmd}
 import net.liftweb.http._
 import net.liftweb.sitemap.{Menu, SiteMap}
 import net.liftweb.util.Helpers._
+import net.liftweb.util.Props
 import org.rules.lift.RulesInjector
 import org.rules.lift.model.{RulesDAO, RulesXMLFileDAO}
 
@@ -15,7 +18,20 @@ import org.rules.lift.model.{RulesDAO, RulesXMLFileDAO}
 class Boot extends Loggable  {
 
   def boot {
-    RulesInjector.registerInjection(() => RulesXMLFileDAO) (Manifest.classType(classOf[RulesDAO]))
+
+    Props.mode match {
+      case Props.RunModes.Test =>
+        val root = File.createTempFile("rulestest", "")
+        if (!root.delete()) {
+          throw new RuntimeException("Cannot delete " + root)
+        }
+        if (!root.mkdir()) {
+          throw new RuntimeException("Cannot create dir " + root)
+        }
+        logger.info("Test root: " + root)
+        RulesInjector.registerInjection(() => RulesXMLFileDAO(root)) (Manifest.classType(classOf[RulesDAO]))
+      case _ => RulesInjector.registerInjection(() => RulesXMLFileDAO()) (Manifest.classType(classOf[RulesDAO]))
+    }
 
     // where to search snippet
     LiftRules.addToPackages("org.rules.lift")

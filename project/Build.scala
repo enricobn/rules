@@ -1,3 +1,4 @@
+import com.earldouglas.xwp.JettyPlugin
 import sbt._
 import Keys._
 
@@ -24,10 +25,17 @@ object BuildSettings {
 object Dependencies {
   val liftVersion = "2.6"
 
-  val jetty = "org.eclipse.jetty" % "jetty-webapp" % "8.1.7.v20120910"  %
-      "container,test"
-  val orbit = "org.eclipse.jetty.orbit" % "javax.servlet" % "3.0.0.v201112011016" %
-      "container,compile" artifacts Artifact("javax.servlet", "jar", "jar")
+//  val jetty = "org.eclipse.jetty" % "jetty-webapp" % "8.1.7.v20120910"  %
+//      "container,test"
+
+  // don't use >= 9.3 since it's java 8
+  val jetty = "org.eclipse.jetty" % "jetty-server" % "9.2.13.v20150730" % "test"
+  val jettyWebApp = "org.eclipse.jetty" % "jetty-webapp" % "9.2.13.v20150730" % "test"
+
+  //val orbit = "javax.servlet" % "javax.servlet-api" % "3.0.1" % "provided"
+  //val orbit = "javax.servlet" % "javax.servlet-api" % "3.0.1" % "provided"
+//  val orbit = "org.eclipse.jetty.orbit" % "javax.servlet" % "3.0.0.v201112011016" %
+//      "container,compile" artifacts Artifact("javax.servlet", "jar", "jar")
 //  val liftWebKit = "net.liftweb" %% "lift-webkit" % liftVersion % "compile"
 
 
@@ -36,6 +44,8 @@ object Dependencies {
     "net.liftweb" %% "lift-mapper" % liftVersion % "compile->default",
     "net.liftweb" %% "lift-wizard" % liftVersion % "compile->default")
 
+  //val selenium = "org.seleniumhq.selenium" % "selenium-java" % "2.23.1" % "test->default"
+  val selenium = "org.seleniumhq.selenium" % "selenium-java" % "2.47.1" % "test->default"
 
   val logback = "ch.qos.logback" % "logback-classic" % "1.0.13"
 
@@ -64,9 +74,8 @@ object RulesBuild extends Build {
   import BuildSettings._
   import Dependencies._
 
-  // Web plugin
-  import com.earldouglas.xsbtwebplugin.WebPlugin._
-  import com.earldouglas.xsbtwebplugin.PluginKeys._
+  // for sbt-dependency-graph plugin (dependency-tree in sbt)
+  private val dependencyTreeSettings = net.virtualvoid.sbt.graph.Plugin.graphSettings
 
   // Coffeescript plugin
 //  import coffeescript.Plugin._
@@ -75,6 +84,7 @@ object RulesBuild extends Build {
   // Less plugin
 //  import less.Plugin._
 //  import LessKeys._
+
   autoScalaLibrary := false
   dependencyOverrides += "org.scala-lang" % "scala-library" % scala
 
@@ -100,11 +110,13 @@ object RulesBuild extends Build {
 
   val depsLift = Seq(
     scalamock,
-    jetty
-  , orbit
-  , logback
+    jetty,
+    jettyWebApp,
+//    jettyRunner,
+//    orbit,
+    logback,
+    selenium
   ) ++ liftweb
-
 
   lazy val root = Project(id = "rules",
     base = file("."),
@@ -114,26 +126,31 @@ object RulesBuild extends Build {
   ) aggregate(core, lift)
 
   lazy val core = Project(
-    "core",
-    file("core"),
+    id = "core",
+    base = file("core"),
     settings = bsCore ++ Seq(
-      libraryDependencies := depsCore,
+      // ++= is needed, == overrides plugins dependencies!
+      libraryDependencies ++= depsCore,
       scalacOptions ++= scalaBuildOptions
     )
   )
 
   lazy val lift = Project(
-    "lift",
-    file("lift"),
+    id = "lift",
+    base = file("lift"),
     settings = bsLift ++ Seq(
-      libraryDependencies := depsLift
-    ) ++ webSettings  ++ Seq(
+      // ++= is needed, == overrides plugins dependencies!
+      libraryDependencies ++= depsLift
+    ) ++ dependencyTreeSettings
+
+    /*++ webSettings  ++ Seq(
       artifactName in packageWar :=
         ((_: ScalaVersion, _: ModuleID, _: Artifact) => "rules.war"),
       port in container.Configuration := 8071,
       scanDirectories in Compile := Nil,
       scalacOptions ++= scalaBuildOptions
-  )
+
+  )*/
 
 /*
     ++ coffeeSettings ++ Seq(
@@ -144,5 +161,6 @@ object RulesBuild extends Build {
     )
 */
   ) dependsOn(core)
+
 }
 
