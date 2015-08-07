@@ -112,13 +112,13 @@ class TestSite extends FunSuite with BeforeAndAfterAll with Logger with RulesDAO
   class Monitor(driver: WebDriver, by: By) {
 
     def run(fun: () => Unit, sleep: Int = 500) = {
-      val elements = findElements(driver, by)
+      val prevElements = findElements(driver, by)
       fun()
       Thread.sleep(sleep)
       val actualElements = findElements(driver, by)
 
-      val newElements = actualElements.diff(elements)
-      val delElements = elements.diff(actualElements)
+      val newElements = actualElements.diff(prevElements)
+      val delElements = prevElements.diff(actualElements)
       MonitorResult(newElements, delElements)
     }
 
@@ -131,13 +131,15 @@ class TestSite extends FunSuite with BeforeAndAfterAll with Logger with RulesDAO
   class MulMonitor(driver: WebDriver, by: Map[String,By]) {
 
     def run(fun: () => Unit, sleep: Int = 500) = {
-      val elements = by.map{ e => (e._1, findElements(driver, e._2)) }
+      def takeElements = by.map{ case (key, elements) => (key, findElements(driver, elements)) }
+
+      val prevElements = takeElements
       fun()
       Thread.sleep(sleep)
-      val actualElements = by.map{ e => (e._1, findElements(driver, e._2)) }
+      val actualElements = takeElements
 
-      val newElements = actualElements.map{ e => (e._1, e._2.diff(elements(e._1))) }
-      val delElements = elements.map{ e => (e._1, e._2.diff(actualElements(e._1))) }
+      val newElements = actualElements.map{ case (key, elements) => (key, elements.diff(prevElements(key))) }
+      val delElements = prevElements.map{ case (key, elements) => (key, elements.diff(actualElements(key))) }
       MulMonitorResult(newElements, delElements)
     }
 
