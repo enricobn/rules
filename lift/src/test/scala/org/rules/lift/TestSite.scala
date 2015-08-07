@@ -36,11 +36,9 @@ class TestSite extends FunSuite with BeforeAndAfterAll with Logger with RulesDAO
     server.setHandler(context)
     server.start()
 
-    // Setting up the Selenium Client for the duration of the tests
+    // Setting up the driver for the duration of the tests
     driver = new FirefoxDriver()
-    //val driver = new HtmlUnitDriver()
     driver.manage().timeouts().implicitlyWait(500, TimeUnit.MILLISECONDS)
-    //selenium.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
   }
 
   override def afterAll() {
@@ -57,34 +55,34 @@ class TestSite extends FunSuite with BeforeAndAfterAll with Logger with RulesDAO
       driver.getTitle
     }
 
-    val projects = new Monitor(driver, By.className("select-project"))
+    val selectProject = new Monitor(driver, By.className("select-project"))
 
-    val testProject = projects.findNewOne(() => {
+    val testProject = selectProject.run(() => {
       driver.findElement(By.id("add-project")).click()
       bootboxPrompt(driver, "Test project")
-    })
+    }).newOne
 
-    val addModule = new Monitor(driver, By.className("add-to-list"))
-    val addToProject = addModule.findNewOne(() => {
+    val addToList = new Monitor(driver, By.className("add-to-list"))
+    val addToProject = addToList.run(() => {
       testProject.click()
-    })
+    }).newOne
 
-    val modules = new Monitor(driver, By.className("select-item"))
-    val testModule = modules.findNewOne( () => {
+    val selectItem = new Monitor(driver, By.className("select-item"))
+    val testModule = selectItem.run( () => {
         addToProject.click()
         bootboxPrompt(driver, "Test module")
-    })
+    }).newOne
 
-    val ruleMonitor = new MulMonitor(driver, Map("add" -> By.className("add-item"), "save" -> By.className("save-items")))
-    val ruleTab = ruleMonitor.find( () => {
+    val addSaveItems = new MulMonitor(driver, Map("add" -> By.className("add-item"), "save" -> By.className("save-items")))
+    val ruleTab = addSaveItems.run( () => {
       testModule.click()
     })
 
     // it's equals to modules
-    val rules = new Monitor(driver, By.className("select-item"))
-    val testRule = rules.findNewOne( () => {
+    //val rules = new Monitor(driver, By.className("select-item"))
+    val testRule = selectItem.run( () => {
       ruleTab.newOne("add").click()
-    })
+    }).newOne
 
     testRule.click()
     ruleTab.newOne("save").click()
@@ -107,11 +105,13 @@ class TestSite extends FunSuite with BeforeAndAfterAll with Logger with RulesDAO
   def findElements(driver: WebDriver, by: By) =
     JavaConverters.collectionAsScalaIterableConverter(driver.findElements(by)).asScala.toSet
 
-  case class MonitorResult(newElements: Iterable[WebElement], delElements: Iterable[WebElement])
+  case class MonitorResult(newElements: Set[WebElement], delElements: Set[WebElement]) {
+    def newOne = newElements.head
+  }
 
   class Monitor(driver: WebDriver, by: By) {
 
-    def find(fun: () => Unit, sleep: Int = 500) = {
+    def run(fun: () => Unit, sleep: Int = 500) = {
       val elements = findElements(driver, by)
       fun()
       Thread.sleep(sleep)
@@ -122,17 +122,15 @@ class TestSite extends FunSuite with BeforeAndAfterAll with Logger with RulesDAO
       MonitorResult(newElements, delElements)
     }
 
-    def findNewOne(fun: () => Unit, sleep: Int = 500) = find(fun, sleep).newElements.head
-
   }
 
-  case class MulMonitorResult(newElements: Map[String,Iterable[WebElement]], delElements: Map[String,Iterable[WebElement]]) {
+  case class MulMonitorResult(newElements: Map[String,Set[WebElement]], delElements: Map[String,Set[WebElement]]) {
     def newOne(key: String) = newElements(key).head
   }
 
   class MulMonitor(driver: WebDriver, by: Map[String,By]) {
 
-    def find(fun: () => Unit, sleep: Int = 500) = {
+    def run(fun: () => Unit, sleep: Int = 500) = {
       val elements = by.map{ e => (e._1, findElements(driver, e._2)) }
       fun()
       Thread.sleep(sleep)
