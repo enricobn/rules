@@ -1,22 +1,27 @@
 package org.rules.lift
 
+import java.util.concurrent.TimeUnit
+
 import com.thoughtworks.selenium.Selenium
 import com.thoughtworks.selenium.webdriven.WebDriverBackedSelenium
 import net.liftweb.common.Logger
 import org.eclipse.jetty.server.Server
 import org.eclipse.jetty.webapp.WebAppContext
+import org.openqa.selenium.{WebElement, By, WebDriver}
 import org.openqa.selenium.firefox.FirefoxDriver
 import org.scalatest.{FunSuite, BeforeAndAfterAll}
+
+import scala.collection.JavaConverters
+import scala.runtime.ScalaRunTime
 
 /**
  * Created by enrico on 8/4/15.
  */
 class TestSite extends FunSuite with BeforeAndAfterAll with Logger with RulesDAOProvider {
   private var server : Server       = null
-  //private var selenium : WebDriver  = null
-  private var selenium : Selenium   = null
+  private var driver : WebDriver    = null
   private val GUI_PORT              = 8071
-  private val host                  = "http://localhost:" + GUI_PORT.toString
+  private val baseUrl               = "http://localhost:" + GUI_PORT.toString
 
   override def beforeAll() {
     // Setting up the jetty instance which will be running the
@@ -32,37 +37,112 @@ class TestSite extends FunSuite with BeforeAndAfterAll with Logger with RulesDAO
     server.start()
 
     // Setting up the Selenium Client for the duration of the tests
-    val driver = new FirefoxDriver()
+    driver = new FirefoxDriver()
     //val driver = new HtmlUnitDriver()
-    selenium = new WebDriverBackedSelenium(driver, host)
-    selenium.setSpeed("500")
+    driver.manage().timeouts().implicitlyWait(500, TimeUnit.MILLISECONDS)
     //selenium.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
   }
 
   override def afterAll() {
     // Close everyhing when done
-    selenium.close()
+    driver.close()
     server.stop()
   }
 
   test("Create new project" ) {
-
-    selenium.open("/")
+    driver.get(baseUrl + "/")
 
     // check that we are on the right page
     assertResult("Rules") {
-      selenium.getTitle
+      driver.getTitle
     }
 
-    selenium.click("id=add-project")
-    selenium.`type`("//input[@type='text']", "First project")
-    selenium.click("css=button.btn.btn-primary")
+    val projects = new Monitor(driver, By.className("select-project"))
 
-    // waiting for the button request to be executed on server
-    selenium.waitForPageToLoad("1000")
+    val testProject = projects.findNewOne(() => {
+      driver.findElement(By.id("add-project")).click()
+      bootboxPrompt(driver, "Test project")
+    })
+
+    val addModule = new Monitor(driver, By.className("add-to-list"))
+    val addToProject = addModule.findNewOne(() => {
+      testProject.click()
+    })
+
+    val modules = new Monitor(driver, By.className("select-item"))
+    val testModule = modules.findNewOne( () => {
+        addToProject.click()
+        bootboxPrompt(driver, "Test module")
+    })
+
+    val ruleMonitor = new MulMonitor(driver, Map("add" -> By.className("add-item"), "save" -> By.className("save-items")))
+    val ruleTab = ruleMonitor.find( () => {
+      testModule.click()
+    })
+
+    // it's equals to modules
+    val rules = new Monitor(driver, By.className("select-item"))
+    val testRule = rules.findNewOne( () => {
+      ruleTab.newOne("add").click()
+    })
+
+    testRule.click()
+    ruleTab.newOne("save").click()
+
+    // waiting for the requests to be executed on server
+    Thread.sleep(1000)
 
     assert(rulesDAO.getProjects.size == 1)
-    assert(rulesDAO.getProjects.head.name == "First project")
+    assert(rulesDAO.getProjects.head.name == "Test project")
+    assert(rulesDAO.getProjects.head.modules.head.name == "Test module")
+    assert(rulesDAO.getProjects.head.modules.head.rules.size == 1)
+  }
+
+  def bootboxPrompt(driver: WebDriver, value: String) = {
+    driver.findElement(By.xpath("//input[@type='text']")).clear()
+    driver.findElement(By.xpath("//input[@type='text']")).sendKeys(value)
+    driver.findElement(By.cssSelector("button.btn.btn-primary")).click()
+  }
+
+  def findElements(driver: WebDriver, by: By) =
+    JavaConverters.collectionAsScalaIterableConverter(driver.findElements(by)).asScala.toSet
+
+  case class MonitorResult(newElements: Iterable[WebElement], delElements: Iterable[WebElement])
+
+  class Monitor(driver: WebDriver, by: By) {
+
+    def find(fun: () => Unit, sleep: Int = 500) = {
+      val elements = findElements(driver, by)
+      fun()
+      Thread.sleep(sleep)
+      val actualElements = findElements(driver, by)
+
+      val newElements = actualElements.diff(elements)
+      val delElements = elements.diff(actualElements)
+      MonitorResult(newElements, delElements)
+    }
+
+    def findNewOne(fun: () => Unit, sleep: Int = 500) = find(fun, sleep).newElements.head
+
+  }
+
+  case class MulMonitorResult(newElements: Map[String,Iterable[WebElement]], delElements: Map[String,Iterable[WebElement]]) {
+    def newOne(key: String) = newElements(key).head
+  }
+
+  class MulMonitor(driver: WebDriver, by: Map[String,By]) {
+
+    def find(fun: () => Unit, sleep: Int = 500) = {
+      val elements = by.map{ e => (e._1, findElements(driver, e._2)) }
+      fun()
+      Thread.sleep(sleep)
+      val actualElements = by.map{ e => (e._1, findElements(driver, e._2)) }
+
+      val newElements = actualElements.map{ e => (e._1, e._2.diff(elements(e._1))) }
+      val delElements = elements.map{ e => (e._1, e._2.diff(actualElements(e._1))) }
+      MulMonitorResult(newElements, delElements)
+    }
+
   }
 
 }
