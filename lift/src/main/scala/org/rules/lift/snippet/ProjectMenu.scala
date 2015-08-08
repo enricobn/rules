@@ -93,7 +93,6 @@ object ProjectMenu extends RulesDAOProvider with JQueryTabs {
     (for {
       newProject <- rulesDAO.delModule(parameters.projectName, name)
       result <- Full(
-        RulesState.moduleDeleted(name) &
         SetHtml(parameters.listContainerId, renderModulesVar.is.get.applyAgain(parameters)) &
         Run(
           s"""

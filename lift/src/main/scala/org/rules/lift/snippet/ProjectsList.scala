@@ -65,7 +65,6 @@ object ProjectsList extends Loggable with RulesDAOProvider with JQueryTabs {
   private def delProject(name: String) = {
     rulesDAO.delProject(name)
 
-    RulesState.projectDeleted(name) &
     SetHtml("projects-list-container", renderProjectsVar.is.get.applyAgain()) &
     Run("pack();")
   }
