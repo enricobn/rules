@@ -122,7 +122,9 @@ trait LiftListEditor[T] {
   def embed(attributes: Map[String,String]) = {
     println(getClass.getSimpleName + ".embed " + attributes)
     val viewId = UUID.randomUUID().toString
-    val fragment = attributes.foldLeft(template){ (actual, tuple) => actual % Attribute(None, tuple._1, Text(tuple._2), scala.xml.Null) }
+    val fragment = attributes.foldLeft(template){ (actual, tuple) => actual % Attribute(None, tuple._1, Text(tuple._2),
+      scala.xml.Null) }
+    // TODO I don't like it
     S.appendJs(Run(
       s"""
           var layout = $$('#$viewId').layout({ applyDefaultStyles: false, north__size: \"auto\" });
