@@ -4,6 +4,8 @@
 /project/project/
 /project/target/
 /target/
+/core/target/
+/lift/target/
 /bin/
 /.classpath
 /.project
